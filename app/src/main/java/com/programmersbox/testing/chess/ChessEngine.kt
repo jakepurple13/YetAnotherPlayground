@@ -5,9 +5,18 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 
+//Most of this was generated through Bard and ChatGPT
 class ChessEngine {
     private val board = Board()
     private val moves = mutableListOf<Move>()
+
+    fun setChessListener(chessListener: ChessListener?) {
+        board.chessListener = chessListener
+    }
+
+    fun setPiece(piece: Piece, square: Square) {
+        board[square] = piece
+    }
 
     fun currentTurn(): Flow<Color> = board.turnToMove
 
@@ -58,8 +67,13 @@ class ChessEngine {
 
 }
 
+interface ChessListener {
+    fun promotion(piece: Piece, square: Square)
+}
+
 data class Board(
-    private val pieces: MutableMap<Square, Piece> = chessBoardMapSetup()
+    private val pieces: MutableMap<Square, Piece> = chessBoardMapSetup(),
+    var chessListener: ChessListener? = null
 ) : MutableMap<Square, Piece> by pieces {
     val turnToMove = MutableStateFlow(Color.White)
 
@@ -72,8 +86,8 @@ data class Board(
         val piece = pieces.remove(from) ?: throw IllegalArgumentException("No piece at $from")
         pieces[to] = piece
         pieces[from] = NoPiece
-        piece.moved(pieces)
         piece.hasMoved = true
+        piece.moved(this, to)
         Move(from, to)
     }.onSuccess { turnToMove.value = !turnToMove.value }
 
@@ -144,14 +158,14 @@ sealed class Piece(
 
     abstract val icon: String
 
-    open fun moved(pieces: MutableMap<Square, Piece>) {}
+    open fun moved(board: Board, square: Square) {}
 
     suspend fun willBeAttacked(board: Board, moves: List<Square>) = runBlocking {
         async {
             moves.apmap { move ->
                 val tempBoard = board.copy().toMutableMap()
                 val from = tempBoard.entries
-                        .find { it.value.color == color && it.value is King }!!.key
+                    .find { it.value.color == color && it.value is King }!!.key
                 tempBoard[move] = this@Piece
                 tempBoard[from] = NoPiece
                 if (isAttacked(tempBoard, move)) move else null
@@ -248,7 +262,7 @@ class King(color: Color) : Piece("K", color) {
         return moves
     }
 
-    override fun moved(pieces: MutableMap<Square, Piece>) {
+    override fun moved(board: Board, square: Square) {
 
     }
 }
@@ -295,6 +309,11 @@ class Pawn(color: Color) : Piece("P", color) {
         //TODO: add en passant
 
         return moves
+    }
+
+    override fun moved(board: Board, square: Square) {
+        if (square.row == 0 || square.row == 7)
+            board.chessListener?.promotion(this, square)
     }
 }
 

@@ -11,16 +11,26 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-class ChessViewModel(private val engine: ChessEngine) : ViewModel() {
+class ChessViewModel(
+    private val engine: ChessEngine = ChessEngine()
+) : ViewModel() {
     var piecePicked by mutableStateOf<Piece?>(null)
     var squarePicked by mutableStateOf<Square?>(null)
 
-    val possibleMoves =  mutableStateListOf<Square>()
+    val possibleMoves = mutableStateListOf<Square>()
     val attackedMoves = mutableStateListOf<Square>()
 
     val currentTurn = engine.currentTurn()
 
     init {
+        engine.setChessListener(
+            object : ChessListener {
+                override fun promotion(piece: Piece, square: Square) {
+                    engine.setPiece(Queen(piece.color), square)
+                }
+            }
+        )
+
         snapshotFlow { piecePicked }
             .onEach {
                 possibleMoves.clear()
