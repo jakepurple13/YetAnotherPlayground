@@ -61,7 +61,7 @@ fun ChessScreenPreview() {
                             val square = Square(j, i)
                             val piece = vm[square]
                             val isPossible = square in vm.possibleMoves
-                            val isAttacked = square in vm.attackedMoves
+                            val isAttacked = square in vm.attackedMoves.map { it.square }
                             FilledTonalIconButton(
                                 onClick = { vm.pickUpPiece(piece, square) },
                                 shape = RectangleShape,

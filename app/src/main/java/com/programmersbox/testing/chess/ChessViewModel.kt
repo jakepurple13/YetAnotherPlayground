@@ -18,7 +18,7 @@ class ChessViewModel(
     var squarePicked by mutableStateOf<Square?>(null)
 
     val possibleMoves = mutableStateListOf<Square>()
-    val attackedMoves = mutableStateListOf<Square>()
+    val attackedMoves = mutableStateListOf<Attacking>()
 
     val currentTurn = engine.currentTurn()
 
@@ -27,6 +27,10 @@ class ChessViewModel(
             object : ChessListener {
                 override fun promotion(piece: Piece, square: Square) {
                     engine.setPiece(Queen(piece.color), square)
+                }
+
+                override fun moved(from: Square, to: Square) {
+
                 }
             }
         )

@@ -7,7 +7,7 @@ import kotlinx.coroutines.runBlocking
 
 //Most of this was generated through Bard and ChatGPT
 class ChessEngine {
-    private val board = Board()
+    private val board = Board.create()
     private val moves = mutableListOf<Move>()
 
     fun setChessListener(chessListener: ChessListener?) {
@@ -55,7 +55,7 @@ class ChessEngine {
         return piece.getPossibleMoves(board, board[piece])
     }
 
-    suspend fun getPiecesAttacking(piece: Piece): List<Square> {
+    suspend fun getPiecesAttacking(piece: Piece): List<Attacking> {
         return piece.willBeAttacked(board, getPossibleMoves(piece))
     }
 
@@ -69,11 +69,15 @@ class ChessEngine {
 
 interface ChessListener {
     fun promotion(piece: Piece, square: Square)
+
+    fun taken(piece: Piece, square: Square) {}
+
+    fun moved(from: Square, to: Square)
 }
 
-data class Board(
+data class Board internal constructor(
     private val pieces: MutableMap<Square, Piece> = chessBoardMapSetup(),
-    var chessListener: ChessListener? = null
+    var chessListener: ChessListener? = null,
 ) : MutableMap<Square, Piece> by pieces {
     val turnToMove = MutableStateFlow(Color.White)
 
@@ -84,10 +88,14 @@ data class Board(
     fun movePiece(from: Square, to: Square): Result<Move> = runCatching {
         //require(pieces[from]?.color != turnToMove) { "Wrong Turn" }
         val piece = pieces.remove(from) ?: throw IllegalArgumentException("No piece at $from")
+        if (pieces[to] !is NoPiece) {
+            pieces[to]?.let { chessListener?.taken(it, to) }
+        }
+
+        piece.moved(this, from, to)
         pieces[to] = piece
         pieces[from] = NoPiece
         piece.hasMoved = true
-        piece.moved(this, to)
         Move(from, to)
     }.onSuccess { turnToMove.value = !turnToMove.value }
 
@@ -141,7 +149,16 @@ enum class Color {
         White -> Black
         else -> None
     }
+
+    val direction
+        get() = when (this) {
+            Black -> -1
+            White -> 1
+            None -> 0
+        }
 }
+
+data class Attacking(val square: Square)
 
 sealed class Piece(
     val symbol: String,
@@ -149,18 +166,32 @@ sealed class Piece(
 ) {
     var hasMoved = false
 
-    protected abstract suspend fun getMoves(board: Board, square: Square): List<Square>
+    protected abstract suspend fun getMoves(
+        board: Board,
+        square: Square,
+        includeKingAttacked: Boolean
+    ): List<Square>
 
-    suspend fun getPossibleMoves(board: Board, square: Square): List<Square> {
+    suspend fun getPossibleMoves(
+        board: Board,
+        square: Square,
+        includeKingAttacked: Boolean = true
+    ): List<Square> {
         val piece = board[square] ?: return emptyList()
-        return piece.getMoves(board, square).filter { board[it]?.color != piece.color }
+        return piece
+            .getMoves(board, square, includeKingAttacked)
+            .filter { board[it]?.color != piece.color }
     }
 
     abstract val icon: String
 
-    open fun moved(board: Board, square: Square) {}
+    open fun moved(board: Board, from: Square, to: Square) {}
 
-    suspend fun willBeAttacked(board: Board, moves: List<Square>) = runBlocking {
+    suspend fun willBeAttacked(
+        board: Board,
+        moves: List<Square>,
+        includeKingAttacked: Boolean = true
+    ) = runBlocking {
         async {
             moves.apmap { move ->
                 val tempBoard = board.copy().toMutableMap()
@@ -168,7 +199,9 @@ sealed class Piece(
                     .find { it.value.color == color && it.value is King }!!.key
                 tempBoard[move] = this@Piece
                 tempBoard[from] = NoPiece
-                if (isAttacked(tempBoard, move)) move else null
+                if (isAttacked(tempBoard, move, includeKingAttacked))
+                    Attacking(move)
+                else null
             }
         }.await().filterNotNull()
     }
@@ -177,15 +210,24 @@ sealed class Piece(
         map { async { f(it) } }.map { it.await() }
     }
 
-    private suspend fun isAttacked(map: MutableMap<Square, Piece>, square: Square): Boolean {
+    private suspend fun isAttacked(
+        map: MutableMap<Square, Piece>,
+        square: Square,
+        includeKingAttacked: Boolean = true
+    ): Boolean {
         for (row in 0..7) {
             for (col in 0..7) {
                 val piece = map[Square(row, col)]
                 if (piece !is NoPiece && piece!!.color != color) {
                     val possibleMoves = map
                         .filter { it.value.color != color }
-                        .filter { it.value !is King } //TODO: Need to change this
-                        .flatMap { it.value.getPossibleMoves(Board(map), it.key) }
+                        .flatMap {
+                            it.value.getPossibleMoves(
+                                board = Board(pieces = map),
+                                square = it.key,
+                                includeKingAttacked = includeKingAttacked
+                            )
+                        }
                     for (move in possibleMoves) {
                         if (move == square) {
                             return true
@@ -206,7 +248,11 @@ class Bishop(color: Color) : Piece("B", color) {
         else -> ""
     }
 
-    override suspend fun getMoves(board: Board, square: Square): List<Square> =
+    override suspend fun getMoves(
+        board: Board,
+        square: Square,
+        includeKingAttacked: Boolean
+    ): List<Square> =
         getDiagonalMoves(this, board, square)
 }
 
@@ -217,7 +263,11 @@ class Queen(color: Color) : Piece("Q", color) {
         else -> ""
     }
 
-    override suspend fun getMoves(board: Board, square: Square): List<Square> {
+    override suspend fun getMoves(
+        board: Board,
+        square: Square,
+        includeKingAttacked: Boolean
+    ): List<Square> {
         val moves = mutableListOf<Square>()
 
         // Get bishop-like moves
@@ -237,7 +287,11 @@ class King(color: Color) : Piece("K", color) {
         else -> ""
     }
 
-    override suspend fun getMoves(board: Board, square: Square): List<Square> {
+    override suspend fun getMoves(
+        board: Board,
+        square: Square,
+        includeKingAttacked: Boolean
+    ): List<Square> {
         val moves = mutableListOf<Square>()
         val row = square.row
         val col = square.col
@@ -255,14 +309,15 @@ class King(color: Color) : Piece("K", color) {
             }
         }
 
-        moves.removeAll(willBeAttacked(board, moves)) //TODO: Need to fiddle with this
+        if (includeKingAttacked)
+            moves.removeAll(willBeAttacked(board, moves, false).map(Attacking::square))
 
         // TODO: add castling moves
 
         return moves
     }
 
-    override fun moved(board: Board, square: Square) {
+    override fun moved(board: Board, from: Square, to: Square) {
 
     }
 }
@@ -274,7 +329,11 @@ class Pawn(color: Color) : Piece("P", color) {
         else -> ""
     }
 
-    override suspend fun getMoves(board: Board, square: Square): List<Square> {
+    override suspend fun getMoves(
+        board: Board,
+        square: Square,
+        includeKingAttacked: Boolean
+    ): List<Square> {
         val moves = mutableListOf<Square>()
 
         // Determine the direction the pawn moves based on its color
@@ -308,12 +367,67 @@ class Pawn(color: Color) : Piece("P", color) {
 
         //TODO: add en passant
 
-        return moves
+        val left = Square(square.row, square.col - 1)
+        val leftB = board[left]
+        if (
+            leftB is Pawn && leftB.color != color && leftB.firstMove &&
+            leftDiagonal is NoPiece
+        ) {
+            moves.add(leftSquare)
+        }
+
+        val right = Square(square.row, square.col + 1)
+        val rightB = board[right]
+        if (
+            rightB is Pawn && rightB.color != color && rightB.firstMove &&
+            rightDiagonal is NoPiece
+        ) {
+            moves.add(rightSquare)
+        }
+
+        return moves.distinct()
     }
 
-    override fun moved(board: Board, square: Square) {
-        if (square.row == 0 || square.row == 7)
-            board.chessListener?.promotion(this, square)
+    private var moveFirst = false
+    var firstMove = false
+
+    override fun moved(board: Board, from: Square, to: Square) {
+        if (to.row == 0 || to.row == 7)
+            board.chessListener?.promotion(this, to)
+
+        if (firstMove) firstMove = false
+
+        if (!moveFirst) {
+            firstMove = true
+            moveFirst = true
+        }
+
+        /*// Check if the pawn can capture diagonally
+        val forwardDirection = if (color == Color.White) 1 else -1
+        val leftSquare = Square(to.row + forwardDirection, to.col - 1)
+        val leftDiagonal = board[leftSquare]
+        val rightSquare = Square(to.row + forwardDirection, to.col + 1)
+        val rightDiagonal = board[rightSquare]
+
+        val left = Square(to.row, to.col - 1)
+        val leftB = board[left]
+        if (
+            leftB is Pawn && leftB.color != color && leftB.firstMove &&
+            leftDiagonal is NoPiece
+        ) {
+            board.chessListener?.taken(leftB, left)
+            board[left] = NoPiece
+        }
+
+        val right = Square(to.row, to.col + 1)
+        val rightB = board[right]
+        if (
+            rightB is Pawn && rightB.color != color && rightB.firstMove &&
+            rightDiagonal is NoPiece
+        ) {
+            board.chessListener?.taken(rightB, right)
+            board[right] = NoPiece
+        }*/
     }
 }
 
@@ -351,7 +465,11 @@ class Rook(color: Color) : Piece("R", color) {
         else -> ""
     }
 
-    override suspend fun getMoves(board: Board, square: Square): List<Square> =
+    override suspend fun getMoves(
+        board: Board,
+        square: Square,
+        includeKingAttacked: Boolean
+    ): List<Square> =
         getHorizontalAndVerticalMoves(board, square)
 }
 
@@ -362,7 +480,11 @@ class Knight(color: Color) : Piece("N", color) {
         else -> ""
     }
 
-    override suspend fun getMoves(board: Board, square: Square): List<Square> {
+    override suspend fun getMoves(
+        board: Board,
+        square: Square,
+        includeKingAttacked: Boolean
+    ): List<Square> {
         val (row, col) = square
         return listOf(
             Square(row + 2, col + 1),
@@ -435,6 +557,11 @@ private fun getHorizontalAndVerticalMoves(board: Board, square: Square) = listOf
 ).flatten()
 
 object NoPiece : Piece("", color = Color.None) {
-    override suspend fun getMoves(board: Board, square: Square): List<Square> = emptyList()
+    override suspend fun getMoves(
+        board: Board,
+        square: Square,
+        includeKingAttacked: Boolean
+    ): List<Square> = emptyList()
+
     override val icon: String = ""
 }
