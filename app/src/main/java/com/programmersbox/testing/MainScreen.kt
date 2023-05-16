@@ -23,7 +23,9 @@ fun MainScreen() {
             contentPadding = padding
         ) {
             items(Screens.destinations) {
-                OutlinedButton(onClick = { navController.navigate(it.route) }) { Text(it.name) }
+                OutlinedButton(
+                    onClick = { navController.navigate(it.route) { launchSingleTop = true } }
+                ) { Text(it.name) }
             }
         }
     }

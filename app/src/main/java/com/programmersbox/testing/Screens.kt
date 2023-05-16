@@ -10,10 +10,12 @@ enum class Screens(
 ) {
     MainScreen(screen = { MainScreen() }),
     LimitedBottomSheetScaffoldScreen(screen = { LimitedBottomSheetScaffoldPreview() }),
-    ChessScreen(screen = { ChessScreenPreview() }),
+    ChessScreen(screen = { ChessScreenPreview() }) {
+        override val route: String get() = "$name/{difficulty}"
+    },
     DynamicThemeLoadingScreen(screen = { DynamicThemeLoadingPreview() });
 
-    val route: String = name
+    open val route: String = name
 
     companion object {
         val destinations = values().filter { it != MainScreen }
