@@ -79,6 +79,10 @@ interface ChessListener {
     fun moved(move: Move)
 }
 
+operator fun MutableMap<Square, Piece>.set(square: Square, piece: Piece?) {
+    set(key = square, value = piece ?: NoPiece)
+}
+
 data class Board internal constructor(
     private val pieces: MutableMap<Square, Piece> = chessBoardMapSetup(),
     var chessListener: ChessListener? = null,
@@ -98,7 +102,7 @@ data class Board internal constructor(
 
         piece.moved(this, from, to)
         pieces[to] = piece
-        pieces[from] = NoPiece
+        pieces[from] = null
         piece.hasMoved = true
         chessListener?.moved(Move(piece, from, to))
         Move(piece, from, to)
@@ -112,20 +116,20 @@ data class Board internal constructor(
 
         move.piece.moved(this, move.from, move.to)
         pieces[move.to] = move.piece
-        pieces[move.from] = NoPiece
+        pieces[move.from] = null
         move.piece.hasMoved = true
         chessListener?.moved(move)
         move
     }.onSuccess { turnToMove.value = !turnToMove.value }
 
-    fun isEmpty(square: Square) = pieces.contains(square)
+    fun isEmpty(square: Square) = pieces[square] is NoPiece
 
     fun tempBoard() = Board(copy().toMutableMap())
 
     suspend fun getAllPossibleMoves(color: Color): List<Move> {
         val moves = mutableListOf<Move>()
-        for (i in 0 until 8) {
-            for (j in 0 until 8) {
+        for (i in 0 until ChessEngine.BOARD_SIZE) {
+            for (j in 0 until ChessEngine.BOARD_SIZE) {
                 val piece = this[i, j] ?: continue
                 if (piece.color == color) {
                     val pieceMoves = piece.getPossibleMoves(this, Square(i, j))
@@ -178,8 +182,6 @@ data class Move(val piece: Piece, val from: Square, val to: Square) {
     override fun toString(): String =
         "${piece.symbol}(${piece.color.name.first()}) ${from.toShortString()} - ${to.toShortString()}"
 }
-
-class AttackedPiece(val piece: Piece, val fromSquare: Square, val squares: List<Move>)
 
 enum class Color {
     Black,
@@ -240,7 +242,7 @@ sealed class Piece(
                 val from = tempBoard.entries
                     .find { it.value.color == color && it.value is King }!!.key
                 tempBoard[move] = this@Piece
-                tempBoard[from] = NoPiece
+                tempBoard[from] = null
                 if (isAttacked(tempBoard, move, includeKingAttacked)) Move(this@Piece, from, move)
                 else null
             }
