@@ -35,6 +35,12 @@ android {
                 "proguard-rules.pro"
             )
         }
+
+        create("beta") {
+            initWith(getByName("debug"))
+            matchingFallbacks.add("debug")
+            isDebuggable = false
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -87,5 +93,5 @@ dependencies {
     ksp(libs.roomCompiler)
     implementation(libs.bundles.pagingLibs)
     implementation(libs.pagingCompose)
-    implementation("ink.lodz:radarny:1.0.1")
+    implementation(libs.radarny)
 }
