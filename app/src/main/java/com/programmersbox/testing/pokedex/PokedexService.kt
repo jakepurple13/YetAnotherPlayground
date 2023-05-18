@@ -44,7 +44,7 @@ object PokedexService {
         limit: Int = 20,
         offset: Int = 0
     ) = runCatching {
-        client.get("pokemon/?limit=$limit&offset=$offset").body<PokemonResponse>()
+        client.get("pokemon/?offset=$offset&limit=$limit").body<PokemonResponse>()
     }
 
     suspend fun fetchPokemon(name: String) = runCatching {

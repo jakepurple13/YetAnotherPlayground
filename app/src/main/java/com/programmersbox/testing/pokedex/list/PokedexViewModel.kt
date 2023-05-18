@@ -16,7 +16,7 @@ class PokedexViewModel(
     @OptIn(ExperimentalPagingApi::class)
     val pager = Pager(
         PagingConfig(
-            pageSize = 20,
+            pageSize = 21,
             enablePlaceholders = true,
             initialLoadSize = 20
         ),

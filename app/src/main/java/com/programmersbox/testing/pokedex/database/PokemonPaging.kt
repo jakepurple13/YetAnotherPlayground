@@ -6,7 +6,6 @@ import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
 import com.programmersbox.testing.pokedex.PokedexService
-import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalPagingApi::class)
@@ -30,6 +29,7 @@ class PokemonRemoteMediator(
             // pass null to load the first page.
             val loadKey = when (loadType) {
                 LoadType.REFRESH -> {
+                    page = 0
                     0
                 }
                 // In this example, you never need to prepend, since REFRESH
@@ -71,7 +71,7 @@ class PokemonRemoteMediator(
             }
 
             MediatorResult.Success(endOfPaginationReached = response.next == null)
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             e.printStackTrace()
             MediatorResult.Error(e)
         }

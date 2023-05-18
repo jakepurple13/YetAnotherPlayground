@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -71,6 +73,7 @@ fun PokemonDetailScreen() {
         )
     }
 
+
     Crossfade(targetState = vm.pokemonInfo, label = "") { target ->
         when (target) {
             DetailState.Error -> ErrorState(
@@ -83,7 +86,12 @@ fun PokemonDetailScreen() {
                 )
             }
 
-            is DetailState.Success -> ContentScreen(pokemon = target.pokemonInfo)
+            is DetailState.Success -> ContentScreen(
+                pokemon = target.pokemonInfo,
+                isSaved = vm.savedPokemon != null,
+                onSave = vm::save,
+                onDelete = vm::remove
+            )
         }
     }
 }
@@ -91,7 +99,7 @@ fun PokemonDetailScreen() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ErrorState(
-    onTryAgain: () -> Unit
+    onTryAgain: () -> Unit,
 ) {
     val navController = LocalNavController.current
 
@@ -128,17 +136,27 @@ private fun ErrorState(
 
 @Composable
 private fun ContentScreen(
-    pokemon: PokemonInfo
+    pokemon: PokemonInfo,
+    isSaved: Boolean,
+    onSave: () -> Unit,
+    onDelete: () -> Unit,
 ) {
     Scaffold(
-        topBar = { ContentHeader(pokemon = pokemon) }
+        topBar = {
+            ContentHeader(
+                pokemon = pokemon,
+                isSaved = isSaved,
+                onSave = onSave,
+                onDelete = onDelete
+            )
+        }
     ) { padding -> ContentBody(pokemon = pokemon, paddingValues = padding) }
 }
 
 @Composable
 private fun ContentBody(
     pokemon: PokemonInfo,
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -213,6 +231,7 @@ private fun ContentBody(
                 "Base Stats",
                 style = MaterialTheme.typography.displaySmall
             )
+
             pokemon.stats.forEach {
                 StatInfoBar(
                     color = it.stat.statColor ?: MaterialTheme.colorScheme.primary,
@@ -248,7 +267,7 @@ private fun StatInfoBar(
     statType: String,
     statAmount: String,
     statCount: Float,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier.fillMaxWidth(),
@@ -281,7 +300,12 @@ private fun StatInfoBar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ContentHeader(pokemon: PokemonInfo) {
+private fun ContentHeader(
+    pokemon: PokemonInfo,
+    isSaved: Boolean,
+    onSave: () -> Unit,
+    onDelete: () -> Unit,
+) {
     val navController = LocalNavController.current
     val surface = MaterialTheme.colorScheme.surface
     val defaultSwatch = SwatchInfo(
@@ -314,7 +338,17 @@ private fun ContentHeader(pokemon: PokemonInfo) {
                     Icon(Icons.Default.ArrowBack, null)
                 }
             },
-            actions = { Text("#${pokemon.id}") },
+            actions = {
+                Text("#${pokemon.id}")
+                IconButton(
+                    onClick = { if (isSaved) onDelete() else onSave() }
+                ) {
+                    Icon(
+                        if (isSaved) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        null
+                    )
+                }
+            },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = Color.Transparent,
                 navigationIconContentColor = swatchInfoLightVibrant.titleColor,

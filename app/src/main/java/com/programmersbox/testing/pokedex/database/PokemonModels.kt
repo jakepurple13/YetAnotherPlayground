@@ -1,5 +1,6 @@
 package com.programmersbox.testing.pokedex.database
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverter
@@ -28,7 +29,18 @@ data class PokemonInfoDb(
     val types: List<PokemonInfo.TypeResponse>,
     val stats: List<PokemonInfo.Stats>,
     val description: PokemonDescription?,
-    val experience: Int
+    val experience: Int,
+)
+
+@Entity("SavedPokemon")
+data class SavedPokemon(
+    @PrimaryKey
+    val url: String,
+    val name: String,
+    @ColumnInfo("imageUrl", defaultValue = "")
+    val imageUrl: String = "",
+    @ColumnInfo("pokedexEntry", defaultValue = "0")
+    val pokedexEntry: Int = 0,
 )
 
 class PokemonConverters {
