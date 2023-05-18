@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.programmersbox.testing.pokedex.PokemonInfo
+import com.programmersbox.testing.pokedex.database.LocalPokedexDatabase
 import com.programmersbox.testing.pokedex.list.toComposeColor
 import com.programmersbox.testing.ui.theme.LightAndDarkPreviews
 import com.programmersbox.testing.ui.theme.LocalNavController
@@ -62,7 +63,13 @@ import com.skydoves.landscapist.palette.PalettePlugin
 
 @Composable
 fun PokemonDetailScreen() {
-    val vm = viewModel { PokemonDetailViewModel(createSavedStateHandle()) }
+    val pokedexDatabase = LocalPokedexDatabase.current
+    val vm = viewModel {
+        PokemonDetailViewModel(
+            createSavedStateHandle(),
+            pokedexDatabase
+        )
+    }
 
     Crossfade(targetState = vm.pokemonInfo, label = "") { target ->
         when (target) {
@@ -208,7 +215,7 @@ private fun ContentBody(
             )
             pokemon.stats.forEach {
                 StatInfoBar(
-                    color = MaterialTheme.colorScheme.primary,
+                    color = it.stat.statColor ?: MaterialTheme.colorScheme.primary,
                     statType = it.stat.shortenedName,
                     statAmount = "${it.baseStat}/300",
                     statCount = it.baseStat / 300f
@@ -267,43 +274,6 @@ private fun StatInfoBar(
             Text(
                 statAmount,
                 color = MaterialTheme.colorScheme.surface
-            )
-        }
-    }
-}
-
-@LightAndDarkPreviews
-@Composable
-private fun ContentBodyPreview() {
-    TestingTheme {
-        Surface {
-            ContentBody(
-                pokemon = PokemonInfo(
-                    id = 0,
-                    name = "Missingno",
-                    height = 10,
-                    weight = 10,
-                    experience = 10,
-                    types = listOf(
-                        PokemonInfo.TypeResponse(0, PokemonInfo.Type("fighting")),
-                        PokemonInfo.TypeResponse(0, PokemonInfo.Type("electric")),
-                    ),
-                    stats = listOf(
-                        PokemonInfo.Stats(
-                            100,
-                            PokemonInfo.Stat("hp")
-                        ),
-                        PokemonInfo.Stats(
-                            100,
-                            PokemonInfo.Stat("attack")
-                        ),
-                        PokemonInfo.Stats(
-                            100,
-                            PokemonInfo.Stat("special-attack")
-                        )
-                    )
-                ),
-                paddingValues = PaddingValues(0.dp)
             )
         }
     }
@@ -386,5 +356,41 @@ private fun ContentHeader(pokemon: PokemonInfo) {
     }
 }
 
-
 data class SwatchInfo(val rgb: Color, val titleColor: Color, val bodyColor: Color)
+
+@LightAndDarkPreviews
+@Composable
+private fun ContentBodyPreview() {
+    TestingTheme {
+        Surface {
+            ContentBody(
+                pokemon = PokemonInfo(
+                    id = 0,
+                    name = "Missingno",
+                    height = 10,
+                    weight = 10,
+                    experience = 10,
+                    types = listOf(
+                        PokemonInfo.TypeResponse(0, PokemonInfo.Type("fighting")),
+                        PokemonInfo.TypeResponse(0, PokemonInfo.Type("electric")),
+                    ),
+                    stats = listOf(
+                        PokemonInfo.Stats(
+                            100,
+                            PokemonInfo.Stat("hp")
+                        ),
+                        PokemonInfo.Stats(
+                            100,
+                            PokemonInfo.Stat("attack")
+                        ),
+                        PokemonInfo.Stats(
+                            100,
+                            PokemonInfo.Stat("special-attack")
+                        )
+                    )
+                ),
+                paddingValues = PaddingValues(0.dp),
+            )
+        }
+    }
+}

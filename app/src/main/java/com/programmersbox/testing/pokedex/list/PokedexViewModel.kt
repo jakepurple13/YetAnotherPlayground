@@ -1,34 +1,28 @@
 package com.programmersbox.testing.pokedex.list
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.programmersbox.testing.pokedex.PokedexService
-import com.programmersbox.testing.pokedex.Pokemon
-import kotlinx.coroutines.launch
+import androidx.paging.ExperimentalPagingApi
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.cachedIn
+import com.programmersbox.testing.pokedex.database.PokedexDatabase
+import com.programmersbox.testing.pokedex.database.PokemonRemoteMediator
 
-class PokedexViewModel : ViewModel() {
+class PokedexViewModel(
+    private val pokedexDatabase: PokedexDatabase
+) : ViewModel() {
 
-    val entries = mutableStateListOf<Pokemon>()
-
-    private var page = 0
-
-    var isLoading by mutableStateOf(false)
-
-    fun loadInformation() {
-        isLoading = true
-        viewModelScope.launch {
-            PokedexService.fetchPokemonList(page)
-                .onSuccess {
-                    entries.addAll(it.results.distinctBy { p -> p.url })
-                    page++
-                }
-                .onFailure { it.printStackTrace() }
-            isLoading = false
-        }
-    }
-
+    @OptIn(ExperimentalPagingApi::class)
+    val pager = Pager(
+        PagingConfig(
+            pageSize = 20,
+            enablePlaceholders = true,
+            initialLoadSize = 20
+        ),
+        remoteMediator = PokemonRemoteMediator(pokedexDatabase),
+        pagingSourceFactory = { pokedexDatabase.pokemonDao().getPokemonPaging() }
+    )
+        .flow
+        .cachedIn(viewModelScope)
 }

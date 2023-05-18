@@ -8,13 +8,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.programmersbox.testing.pokedex.PokedexService
 import com.programmersbox.testing.pokedex.PokemonInfo
+import com.programmersbox.testing.pokedex.database.PokedexDatabase
+import com.programmersbox.testing.pokedex.database.toPokemonInfo
+import com.programmersbox.testing.pokedex.database.toPokemonInfoDb
 import kotlinx.coroutines.launch
 
 class PokemonDetailViewModel(
-    savedStateHandle: SavedStateHandle
+    savedStateHandle: SavedStateHandle,
+    pokedexDatabase: PokedexDatabase
 ) : ViewModel() {
     private val name: String? by lazy { savedStateHandle["name"] }
     var pokemonInfo: DetailState by mutableStateOf(DetailState.Loading)
+
+    private val dao = pokedexDatabase.pokemonInfoDao()
 
     init {
         load()
@@ -23,8 +29,13 @@ class PokemonDetailViewModel(
     fun load() {
         pokemonInfo = DetailState.Loading
         viewModelScope.launch {
-            name?.let {
-                pokemonInfo = PokedexService.fetchPokemon(it)
+            name?.let { n ->
+                val fromDb = dao
+                    .getPokemonInfo(n)
+                    ?.toPokemonInfo()
+                    ?.let { DetailState.Success(it) }
+                pokemonInfo = fromDb ?: PokedexService.fetchPokemon(n)
+                    .onSuccess { dao.insertPokemonInfo(it.toPokemonInfoDb()) }
                     .fold(
                         onSuccess = { DetailState.Success(it) },
                         onFailure = { DetailState.Error }

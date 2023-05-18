@@ -7,54 +7,72 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
+import androidx.paging.compose.itemKey
 import com.programmersbox.testing.Screens
 import com.programmersbox.testing.pokedex.Pokemon
+import com.programmersbox.testing.pokedex.database.LocalPokedexDatabase
+import com.programmersbox.testing.pokedex.database.toPokemon
 import com.programmersbox.testing.ui.theme.LocalNavController
 import com.skydoves.landscapist.components.rememberImageComponent
 import com.skydoves.landscapist.glide.GlideImage
 import com.skydoves.landscapist.palette.PalettePlugin
-import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun PokedexScreen() {
-    val vm = viewModel<PokedexViewModel>()
+    val pokedexDatabase = LocalPokedexDatabase.current
+    val vm = viewModel { PokedexViewModel(pokedexDatabase) }
+
+    val entries = vm.pager.collectAsLazyPagingItems()
 
     val listState = rememberLazyGridState()
     val navController = LocalNavController.current
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Pokedex") })
+            TopAppBar(
+                title = { Text("Pokedex") },
+                actions = {
+                    IconButton(
+                        onClick = { scope.launch { pokedexDatabase.pokemonDao().clearAll() } }
+                    ) { Icon(Icons.Default.Delete, null) }
+                }
+            )
         }
     ) { padding ->
         Column(
@@ -68,27 +86,31 @@ fun PokedexScreen() {
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                 state = listState
             ) {
-                items(vm.entries, key = { it.url }, contentType = { it }) {
-                    PokedexEntry(
-                        pokemon = it,
-                        onClick = {
-                            navController.navigate(
-                                Screens.PokedexDetail.route.replace("{name}", it.name)
-                            ) { launchSingleTop = true }
-                        }
-                    )
+                items(
+                    count = entries.itemCount,
+                    key = entries.itemKey { it.url },
+                    contentType = entries.itemContentType { it }
+                ) {
+                    entries[it]?.toPokemon()?.let { pokemon ->
+                        PokedexEntry(
+                            pokemon = pokemon,
+                            onClick = {
+                                navController.navigate(
+                                    Screens.PokedexDetail.route.replace("{name}", pokemon.name)
+                                ) { launchSingleTop = true }
+                            }
+                        )
+                    } ?: CircularProgressIndicator()
                 }
             }
             AnimatedVisibility(
-                visible = vm.isLoading,
+                visible = entries.loadState.append is LoadState.Loading,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 CircularProgressIndicator()
             }
         }
     }
-
-    InfiniteListHandler(listState = listState) { vm.loadInformation() }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -109,10 +131,13 @@ private fun PokedexEntry(
         colors = CardDefaults.elevatedCardColors(
             containerColor = swatchInfo.rgb,
             contentColor = swatchInfo.titleColor
-        )
+        ),
+        modifier = Modifier.sizeIn(minHeight = 250.dp)
     ) {
         Column(
-            modifier = Modifier.padding(4.dp)
+            modifier = Modifier
+                .padding(4.dp)
+                .fillMaxSize()
         ) {
             Text(pokemon.pokedexEntry)
             val latestSwatch by rememberUpdatedState(newValue = swatchInfo)
@@ -144,36 +169,6 @@ private fun PokedexEntry(
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         }
-    }
-}
-
-@ExperimentalFoundationApi
-@Composable
-fun InfiniteListHandler(
-    listState: LazyGridState,
-    buffer: Int = 2,
-    onLoadMore: () -> Unit
-) {
-    var lastTotalItems = remember { -1 }
-    val loadMore = remember {
-        derivedStateOf {
-            val layoutInfo = listState.layoutInfo
-            val totalItemsNumber = layoutInfo.totalItemsCount
-            val lastVisibleItemIndex = (layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0) + 1
-
-            lastVisibleItemIndex > (totalItemsNumber - buffer) && (lastTotalItems != totalItemsNumber)
-        }
-    }
-
-    LaunchedEffect(loadMore) {
-        snapshotFlow { loadMore.value }
-            .distinctUntilChanged()
-            .collect {
-                if (it) {
-                    lastTotalItems = listState.layoutInfo.totalItemsCount
-                    onLoadMore()
-                }
-            }
     }
 }
 

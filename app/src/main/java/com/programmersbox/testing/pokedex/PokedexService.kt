@@ -1,5 +1,6 @@
 package com.programmersbox.testing.pokedex
 
+import androidx.compose.ui.graphics.Color
 import com.programmersbox.testing.ui.theme.firstCharCapital
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -174,6 +175,17 @@ data class PokemonInfo(
             "special-defense" -> "SP.DEF"
             else -> name
         }
+
+        val statColor
+            get() = when (name) {
+                "hp" -> 0xffFF0000
+                "attack" -> 0xffF08030
+                "defense" -> 0xffF8D030
+                "speed" -> 0xffF85888
+                "special-attack" -> 0xff6890F0
+                "special-defense" -> 0xff78C850
+                else -> null
+            }?.let { Color(it) }
     }
 
     companion object {
