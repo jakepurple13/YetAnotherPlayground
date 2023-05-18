@@ -48,10 +48,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.lodz.android.radarny.RadarnyBean
+import com.lodz.android.radarny.RadarnyView
 import com.programmersbox.testing.pokedex.PokemonInfo
 import com.programmersbox.testing.pokedex.database.LocalPokedexDatabase
 import com.programmersbox.testing.pokedex.list.toComposeColor
@@ -160,7 +164,7 @@ private fun ContentBody(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceAround,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
         modifier = Modifier
             .verticalScroll(rememberScrollState())
             .padding(paddingValues)
@@ -230,6 +234,34 @@ private fun ContentBody(
             Text(
                 "Base Stats",
                 style = MaterialTheme.typography.displaySmall
+            )
+
+            val frame = MaterialTheme.colorScheme.onSurface
+            val primary = MaterialTheme.colorScheme.primary
+
+            AndroidView(
+                modifier = Modifier
+                    .size(140.dp)
+                    .padding(4.dp),
+                factory = { RadarnyView(it) },
+                update = {
+                    it
+                        .setMaxValue(300f)
+                        .setFrameRound(false)
+                        .setValueColor(primary.copy(alpha = .75f).toArgb())
+                        .setFrameColor(frame.toArgb())
+                        .setTextColor(frame.toArgb())
+                        .setInnerLineColor(frame.toArgb())
+                        .setData(
+                            pokemon.stats.map { s ->
+                                RadarnyBean(
+                                    s.stat.shortenedName,
+                                    s.baseStat.toFloat()
+                                )
+                            } as ArrayList<RadarnyBean>
+                        )
+                        .build()
+                }
             )
 
             pokemon.stats.forEach {

@@ -87,4 +87,5 @@ dependencies {
     ksp(libs.roomCompiler)
     implementation(libs.bundles.pagingLibs)
     implementation(libs.pagingCompose)
+    implementation("ink.lodz:radarny:1.0.1")
 }
