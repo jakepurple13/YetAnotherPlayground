@@ -15,7 +15,10 @@ interface PokemonDao {
     suspend fun insertPokemonList(pokemonList: List<PokemonDb>)
 
     @Query("SELECT * FROM Pokemon")
-    suspend fun getAllPokemonList(): List<PokemonDb>
+    fun getAllPokemonList(): Flow<List<PokemonDb>>
+
+    @Query("SELECT * FROM Pokemon WHERE name LIKE :searchText")
+    fun searchPokemon(searchText: String): Flow<List<PokemonDb>>
 
     @Query("SELECT * FROM Pokemon")
     fun getPokemonPaging(): PagingSource<Int, PokemonDb>
