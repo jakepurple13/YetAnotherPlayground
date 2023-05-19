@@ -35,14 +35,16 @@ object PokedexService {
         }
     }
 
+    const val PAGE_SIZE = 200
+
     suspend fun fetchPokemonList(page: Int) = fetchPokemonList(
-        limit = 20,
-        offset = page * 20
+        limit = PAGE_SIZE,
+        offset = page * PAGE_SIZE
     )
 
     private suspend fun fetchPokemonList(
-        limit: Int = 20,
-        offset: Int = 0
+        limit: Int = PAGE_SIZE,
+        offset: Int = 0,
     ) = runCatching {
         client.get("pokemon/?offset=$offset&limit=$limit").body<PokemonResponse>()
     }

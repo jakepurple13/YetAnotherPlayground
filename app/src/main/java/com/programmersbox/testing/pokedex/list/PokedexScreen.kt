@@ -40,8 +40,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
@@ -50,6 +52,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.contentColorFor
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -77,11 +80,13 @@ import com.programmersbox.testing.pokedex.database.LocalPokedexDatabase
 import com.programmersbox.testing.pokedex.database.PokemonDb
 import com.programmersbox.testing.pokedex.database.SavedPokemon
 import com.programmersbox.testing.pokedex.database.toPokemon
+import com.programmersbox.testing.pokedex.navigateToPokemonDetail
 import com.programmersbox.testing.ui.theme.LocalNavController
 import com.programmersbox.testing.ui.theme.firstCharCapital
 import com.skydoves.landscapist.components.rememberImageComponent
 import com.skydoves.landscapist.glide.GlideImage
 import com.skydoves.landscapist.palette.PalettePlugin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -107,22 +112,29 @@ fun PokedexScreen() {
     var showSearch by remember { mutableStateOf(false) }
 
     if (showSearch) {
-        var q by remember { mutableStateOf("") }
         SearchPokemon(
-            query = q,
-            onQueryChange = { q = it },
-            pokemonList = pokedexDatabase.pokemonDao()
-                .searchPokemon("%$q%")
+            query = vm.searchQuery,
+            onQueryChange = { vm.searchQuery = it },
+            pokemonList = vm.searchList
                 .collectAsStateWithLifecycle(initialValue = emptyList())
                 .value,
-            onQueryClick = {
-                navController.navigate(
-                    Screens.PokedexDetail
-                        .route
-                        .replace("{name}", it.name)
-                ) { launchSingleTop = true }
-            },
+            onQueryClick = { navController.navigateToPokemonDetail(it.name) },
             onDismiss = { showSearch = false }
+        )
+    }
+
+    LaunchedEffect(vm.pokemonSort) {
+        delay(100)
+        listState.animateScrollToItem(0)
+    }
+
+    var showSort by remember { mutableStateOf(false) }
+
+    if (showSort) {
+        SortPokemon(
+            pokemonSort = vm.pokemonSort,
+            onSortChange = { vm.pokemonSort = it },
+            onDismiss = { showSort = false }
         )
     }
 
@@ -144,6 +156,12 @@ fun PokedexScreen() {
                         }
                     },
                     actions = {
+                        IconButton(
+                            onClick = { showSort = true }
+                        ) {
+                            Icon(vm.pokemonSort.icon, null)
+                        }
+
                         IconButton(
                             onClick = { showSearch = true }
                         ) { Icon(Icons.Default.Search, null) }
@@ -193,15 +211,8 @@ fun PokedexScreen() {
                         PokedexEntry(
                             pokemon = pokemon,
                             saved = saved,
-                            onClick = {
-                                pokemon?.let { p ->
-                                    navController.navigate(
-                                        Screens.PokedexDetail
-                                            .route
-                                            .replace("{name}", p.name)
-                                    ) { launchSingleTop = true }
-                                }
-                            }
+                            onClick = { pokemon?.name?.let(navController::navigateToPokemonDetail) },
+                            modifier = Modifier.animateItemPlacement()
                         )
                     }
                 }
@@ -213,6 +224,7 @@ fun PokedexScreen() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PokedexEntry(
+    modifier: Modifier = Modifier,
     pokemon: Pokemon?,
     saved: List<SavedPokemon>,
     onClick: () -> Unit,
@@ -230,7 +242,7 @@ private fun PokedexEntry(
             containerColor = swatchInfo.rgb,
             contentColor = swatchInfo.titleColor
         ),
-        modifier = Modifier.sizeIn(minHeight = 250.dp)
+        modifier = modifier.sizeIn(minHeight = 250.dp)
     ) {
         if (pokemon != null) {
             Column(
@@ -357,6 +369,35 @@ private fun DrawerContent(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+private fun SortPokemon(
+    pokemonSort: PokemonSort,
+    onSortChange: (PokemonSort) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        TopAppBar(title = { Text("Sort") })
+        LazyColumn {
+            val values = PokemonSort.values()
+            itemsIndexed(values) { index, sort ->
+                ListItem(
+                    leadingContent = {
+                        RadioButton(selected = sort == pokemonSort, onClick = null)
+                    },
+                    headlineContent = { Text(sort.name) },
+                    modifier = Modifier.clickable {
+                        onSortChange(sort)
+                        onDismiss()
+                    }
+                )
+
+                if (index != values.lastIndex) Divider()
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 private fun SearchPokemon(
     query: String,
     onQueryChange: (String) -> Unit,
@@ -365,13 +406,19 @@ private fun SearchPokemon(
     onDismiss: () -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
-    var active by rememberSaveable { mutableStateOf(true) }
+    var active by rememberSaveable { mutableStateOf(false) }
 
     fun closeSearchBar() {
         focusManager.clearFocus()
         active = false
         onDismiss()
     }
+
+    LaunchedEffect(Unit) {
+        delay(200)
+        active = true
+    }
+
     SearchBar(
         query = query,
         onQueryChange = onQueryChange,
@@ -379,7 +426,10 @@ private fun SearchPokemon(
         active = active,
         onActiveChange = {
             active = it
-            if (!active) focusManager.clearFocus()
+            if (!active) {
+                focusManager.clearFocus()
+                onDismiss()
+            }
         },
         placeholder = { Text("Search") },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
@@ -388,6 +438,7 @@ private fun SearchPokemon(
                 Icon(Icons.Default.Cancel, null)
             }
         },
+        modifier = Modifier.fillMaxWidth()
     ) {
         LazyColumn(
             modifier = Modifier

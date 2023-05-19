@@ -23,6 +23,9 @@ interface PokemonDao {
     @Query("SELECT * FROM Pokemon")
     fun getPokemonPaging(): PagingSource<Int, PokemonDb>
 
+    @Query("SELECT * FROM Pokemon ORDER BY name")
+    fun getPokemonPagingAlphabet(): PagingSource<Int, PokemonDb>
+
     @Query("SELECT * FROM Pokemon WHERE name = :name")
     suspend fun getSinglePokemon(name: String): PokemonDb?
 
