@@ -228,58 +228,56 @@ fun PokedexScreen() {
 
 @Composable
 private fun Animations() {
-    Box(
+    Row(
+        horizontalArrangement = Arrangement.Start,
         modifier = Modifier
             .padding(top = 4.dp)
             .fillMaxWidth(),
-        contentAlignment = Alignment.TopStart
     ) {
-        Row {
-            val animation = rememberInfiniteTransition(label = "")
-            val color by animation.animateColor(
-                initialValue = Color(0xff3b4cca),
-                targetValue = Color(0xff1de9b6),
-                animationSpec = infiniteRepeatable(
-                    animation = tween(1000),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = ""
-            )
-            Box(
-                Modifier
-                    .size(60.dp)
-                    .background(color, CircleShape)
-                    .border(2.dp, Color.White, CircleShape)
-            )
+        val animation = rememberInfiniteTransition(label = "")
+        val color by animation.animateColor(
+            initialValue = Color(0xff3b4cca),
+            targetValue = Color(0xff1de9b6),
+            animationSpec = infiniteRepeatable(
+                animation = tween(1000),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = ""
+        )
+        Box(
+            Modifier
+                .size(60.dp)
+                .background(color, CircleShape)
+                .border(2.dp, Color.White, CircleShape)
+        )
 
-            Spacer(Modifier.width(2.dp))
-            Light(
-                color = Color.Red,
-                offColor = { it.copy(red = it.red * .8f) },
-                changeChance = { Random.nextInt(1, 10) % 2 == 0 },
-                delayAmount = 500
-            )
-            Spacer(Modifier.width(2.dp))
-            Light(
-                color = Color.Yellow,
-                offColor = {
-                    it.copy(
-                        red = it.red * .8f,
-                        green = it.green * .8f,
-                        blue = it.blue * .8f
-                    )
-                },
-                changeChance = { Random.nextInt(1, 50) % 2 == 1 },
-                delayAmount = 5000
-            )
-            Spacer(Modifier.width(2.dp))
-            Light(
-                color = Color.Green,
-                offColor = { it.copy(green = it.green * .8f) },
-                changeChance = { Random.nextInt(1, 100) == 25 },
-                delayAmount = 10000,
-            )
-        }
+        Spacer(Modifier.width(2.dp))
+        Light(
+            color = Color.Red,
+            offColor = { it.copy(red = it.red * .8f) },
+            changeChance = { Random.nextInt(1, 10) % 2 == 0 },
+            delayAmount = 500
+        )
+        Spacer(Modifier.width(2.dp))
+        Light(
+            color = Color.Yellow,
+            offColor = {
+                it.copy(
+                    red = it.red * .8f,
+                    green = it.green * .8f,
+                    blue = it.blue * .8f
+                )
+            },
+            changeChance = { Random.nextInt(1, 50) % 2 == 1 },
+            delayAmount = 5000
+        )
+        Spacer(Modifier.width(2.dp))
+        Light(
+            color = Color.Green,
+            offColor = { it.copy(green = it.green * .8f) },
+            changeChance = { Random.nextInt(1, 100) == 25 },
+            delayAmount = 10000,
+        )
     }
 }
 

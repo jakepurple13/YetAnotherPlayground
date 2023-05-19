@@ -6,7 +6,6 @@ import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
 import com.programmersbox.testing.pokedex.PokedexService
-import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalPagingApi::class)
 class PokemonRemoteMediator(
@@ -14,8 +13,6 @@ class PokemonRemoteMediator(
     private val networkService: PokedexService = PokedexService
 ) : RemoteMediator<Int, PokemonDb>() {
     private val userDao = database.pokemonDao()
-
-    private var lastUpdated = 0L
     private var page = 0
 
     override suspend fun load(
@@ -58,7 +55,6 @@ class PokemonRemoteMediator(
             // thread.
             val response = networkService.fetchPokemonList(loadKey).getOrThrow()
             page++
-            lastUpdated = System.currentTimeMillis()
             database.withTransaction {
                 if (loadType == LoadType.REFRESH) {
                     userDao.clearAll()
@@ -74,20 +70,6 @@ class PokemonRemoteMediator(
         } catch (e: Exception) {
             e.printStackTrace()
             MediatorResult.Error(e)
-        }
-    }
-
-    override suspend fun initialize(): InitializeAction {
-        val cacheTimeout = TimeUnit.MILLISECONDS.convert(1, TimeUnit.HOURS)
-        return if (System.currentTimeMillis() - lastUpdated >= cacheTimeout) {
-            // Cached data is up-to-date, so there is no need to re-fetch
-            // from the network.
-            InitializeAction.SKIP_INITIAL_REFRESH
-        } else {
-            // Need to refresh cached data from network; returning
-            // LAUNCH_INITIAL_REFRESH here will also block RemoteMediator's
-            // APPEND and PREPEND from running until REFRESH succeeds.
-            InitializeAction.LAUNCH_INITIAL_REFRESH
         }
     }
 }

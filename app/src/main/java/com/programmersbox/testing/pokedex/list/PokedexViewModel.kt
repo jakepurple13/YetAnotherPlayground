@@ -33,7 +33,7 @@ class PokedexViewModel(
 
     @OptIn(ExperimentalPagingApi::class, ExperimentalCoroutinesApi::class)
     val pager = snapshotFlow { pokemonSort }
-        .flatMapLatest {
+        .flatMapLatest { sort ->
             Pager(
                 PagingConfig(
                     pageSize = PokedexService.PAGE_SIZE + 1,
@@ -42,7 +42,7 @@ class PokedexViewModel(
                 ),
                 remoteMediator = PokemonRemoteMediator(pokedexDatabase),
                 pagingSourceFactory = {
-                    when (it) {
+                    when (sort) {
                         PokemonSort.Index -> dao.getPokemonPaging()
                         PokemonSort.Alphabetical -> dao.getPokemonPagingAlphabet()
                     }
