@@ -84,6 +84,7 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.programmersbox.testing.Screens
 import com.programmersbox.testing.pokedex.Pokemon
 import com.programmersbox.testing.pokedex.database.LocalPokedexDatabase
@@ -119,6 +120,8 @@ fun PokedexScreen() {
     val scope = rememberCoroutineScope()
     val navController = LocalNavController.current
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+
+    EnterFullScreen()
 
     var showSearch by remember { mutableStateOf(false) }
 
@@ -254,7 +257,7 @@ private fun Animations() {
             color = Color.Red,
             offColor = { it.copy(red = it.red * .8f) },
             changeChance = { Random.nextInt(1, 10) % 2 == 0 },
-            delayAmount = 500
+            delayAmount = { Random.nextLong(50, 250) }
         )
         Spacer(Modifier.width(2.dp))
         Light(
@@ -267,14 +270,14 @@ private fun Animations() {
                 )
             },
             changeChance = { Random.nextInt(1, 50) % 2 == 1 },
-            delayAmount = 5000
+            delayAmount = { Random.nextLong(2500, 5000) }
         )
         Spacer(Modifier.width(2.dp))
         Light(
             color = Color.Green,
             offColor = { it.copy(green = it.green * .8f) },
             changeChance = { Random.nextInt(1, 100) == 25 },
-            delayAmount = 10000,
+            delayAmount = { 10000 },
         )
     }
 }
@@ -283,7 +286,7 @@ private fun Animations() {
 private fun Light(
     color: Color,
     offColor: (Color) -> Color,
-    delayAmount: Long,
+    delayAmount: () -> Long,
     changeChance: () -> Boolean,
 ) {
     val off = offColor(color)
@@ -292,7 +295,7 @@ private fun Light(
     LaunchedEffect(Unit) {
         while (true) {
             newColor = if (changeChance()) off else color
-            delay(delayAmount)
+            delay(delayAmount())
         }
     }
 
@@ -544,6 +547,17 @@ private fun SearchPokemon(
             }
         }
     }
+}
+
+@Composable
+private fun EnterFullScreen() {
+    val uiController = rememberSystemUiController()
+    //TODO: This isn't working for some reason
+    // it'll hide the status bar but it's like it loses the insets
+    /*LifecycleHandler(
+        onStart = { uiController.isSystemBarsVisible = false },
+        onDestroy = { uiController.isSystemBarsVisible = true }
+    )*/
 }
 
 private data class SwatchInfo(val rgb: Color, val titleColor: Color, val bodyColor: Color)

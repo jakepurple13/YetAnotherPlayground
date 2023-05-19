@@ -1,6 +1,5 @@
 package com.programmersbox.testing.ui.theme
 
-import android.app.Activity
 import android.content.res.Configuration
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -14,10 +13,10 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.core.view.WindowCompat
 import androidx.navigation.NavHostController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.programmersbox.testing.pokedex.database.LocalPokedexDatabase
@@ -68,9 +67,10 @@ fun TestingTheme(
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            uiController.setSystemBarsColor(androidx.compose.ui.graphics.Color.Transparent)
-            val window = (view.context as Activity).window
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            uiController.setSystemBarsColor(
+                color = Color.Transparent,
+                darkIcons = !darkTheme
+            )
         }
     }
     val db = remember { PokedexDatabase.getInstance(context) }
