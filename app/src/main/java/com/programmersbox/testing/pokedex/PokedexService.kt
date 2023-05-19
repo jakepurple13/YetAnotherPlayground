@@ -6,6 +6,10 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.logging.SIMPLE
 import io.ktor.client.request.get
 import io.ktor.http.ContentType
 import io.ktor.http.URLBuilder
@@ -17,7 +21,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.Locale
-import kotlin.random.Random
 
 
 object PokedexService {
@@ -25,6 +28,11 @@ object PokedexService {
     private val client = HttpClient {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
+        }
+
+        install(Logging) {
+            logger = Logger.SIMPLE
+            level = LogLevel.BODY
         }
 
         defaultRequest {
@@ -100,11 +108,6 @@ data class PokemonInfo(
     @SerialName("base_experience") val experience: Int,
     val types: List<TypeResponse>,
     val stats: List<Stats>,
-    val hp: Int = Random.nextInt(maxHp),
-    val attack: Int = Random.nextInt(maxAttack),
-    val defense: Int = Random.nextInt(maxDefense),
-    val speed: Int = Random.nextInt(maxSpeed),
-    val exp: Int = Random.nextInt(maxExp),
     var pokemonDescription: PokemonDescription? = null
 ) {
 
@@ -113,19 +116,8 @@ data class PokemonInfo(
             return "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png"
         }
 
-    val showdownImageUrl: String
-        get() {
-            return "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/$id.png"
-        }
-
-    fun getIdString(): String = String.format("#%03d", id)
     fun getWeightString(): String = String.format("%.1f KG", weight.toFloat() / 10)
     fun getHeightString(): String = String.format("%.1f M", height.toFloat() / 10)
-    fun getHpString(): String = " $hp/$maxHp"
-    fun getAttackString(): String = " $attack/$maxAttack"
-    fun getDefenseString(): String = " $defense/$maxDefense"
-    fun getSpeedString(): String = " $speed/$maxSpeed"
-    fun getExpString(): String = " $exp/$maxExp"
 
     @Serializable
     data class TypeResponse(
@@ -188,14 +180,6 @@ data class PokemonInfo(
                 "special-defense" -> 0xff78C850
                 else -> null
             }?.let { Color(it) }
-    }
-
-    companion object {
-        const val maxHp = 300
-        const val maxAttack = 300
-        const val maxDefense = 300
-        const val maxSpeed = 300
-        const val maxExp = 1000
     }
 }
 

@@ -164,9 +164,7 @@ fun PokedexScreen() {
                     actions = {
                         IconButton(
                             onClick = { showSort = true }
-                        ) {
-                            Icon(vm.pokemonSort.icon, null)
-                        }
+                        ) { Icon(vm.pokemonSort.icon, null) }
 
                         IconButton(
                             onClick = { showSearch = true }

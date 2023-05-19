@@ -42,3 +42,6 @@ abstract class PokedexDatabase : RoomDatabase() {
 }
 
 val LocalPokedexDatabase = staticCompositionLocalOf<PokedexDatabase> { error("Nothing here!") }
+val LocalPokemonDao = staticCompositionLocalOf<PokemonDao> { error("Nothing here!") }
+val LocalPokemonInfoDao = staticCompositionLocalOf<PokemonInfoDao> { error("Nothing here!") }
+val LocalSavedPokemonDao = staticCompositionLocalOf<SavedPokemonDao> { error("Nothing here!") }

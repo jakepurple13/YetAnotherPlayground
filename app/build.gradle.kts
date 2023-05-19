@@ -94,4 +94,5 @@ dependencies {
     implementation(libs.bundles.pagingLibs)
     implementation(libs.pagingCompose)
     implementation(libs.radarny)
+    implementation(libs.systemUiController)
 }
