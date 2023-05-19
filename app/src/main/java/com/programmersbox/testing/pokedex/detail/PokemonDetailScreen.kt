@@ -20,8 +20,10 @@ import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Height
+import androidx.compose.material.icons.filled.Scale
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -58,11 +60,11 @@ import com.lodz.android.radarny.RadarnyBean
 import com.lodz.android.radarny.RadarnyView
 import com.programmersbox.testing.pokedex.PokemonInfo
 import com.programmersbox.testing.pokedex.database.LocalPokedexDatabase
-import com.programmersbox.testing.pokedex.list.toComposeColor
 import com.programmersbox.testing.ui.theme.LightAndDarkPreviews
 import com.programmersbox.testing.ui.theme.LocalNavController
 import com.programmersbox.testing.ui.theme.TestingTheme
 import com.programmersbox.testing.ui.theme.firstCharCapital
+import com.programmersbox.testing.ui.theme.toComposeColor
 import com.skydoves.landscapist.components.rememberImageComponent
 import com.skydoves.landscapist.glide.GlideImage
 import com.skydoves.landscapist.palette.PalettePlugin
@@ -164,7 +166,7 @@ private fun ContentBody(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier
             .verticalScroll(rememberScrollState())
             .padding(paddingValues)
@@ -203,26 +205,20 @@ private fun ContentBody(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Icon(Icons.Default.Scale, null)
                 Text(
                     pokemon.getWeightString(),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Text(
-                    "Weight",
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Icon(Icons.Default.Height, null)
                 Text(
                     pokemon.getHeightString(),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Text(
-                    "Height",
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
@@ -375,10 +371,12 @@ private fun ContentHeader(
                 IconButton(
                     onClick = { if (isSaved) onDelete() else onSave() }
                 ) {
-                    Icon(
-                        if (isSaved) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        null
-                    )
+                    Crossfade(targetState = isSaved, label = "") { target ->
+                        Icon(
+                            if (target) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                            null,
+                        )
+                    }
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(

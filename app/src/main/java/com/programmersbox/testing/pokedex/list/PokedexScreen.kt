@@ -1,19 +1,28 @@
 package com.programmersbox.testing.pokedex.list
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -22,8 +31,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.BottomAppBar
@@ -66,6 +75,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -79,16 +89,17 @@ import com.programmersbox.testing.pokedex.Pokemon
 import com.programmersbox.testing.pokedex.database.LocalPokedexDatabase
 import com.programmersbox.testing.pokedex.database.PokemonDb
 import com.programmersbox.testing.pokedex.database.SavedPokemon
-import com.programmersbox.testing.pokedex.database.toPokemon
 import com.programmersbox.testing.pokedex.navigateToPokemonDetail
 import com.programmersbox.testing.ui.theme.LocalNavController
 import com.programmersbox.testing.ui.theme.firstCharCapital
+import com.programmersbox.testing.ui.theme.toComposeColor
 import com.skydoves.landscapist.components.rememberImageComponent
 import com.skydoves.landscapist.glide.GlideImage
 import com.skydoves.landscapist.palette.PalettePlugin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
+import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -121,11 +132,6 @@ fun PokedexScreen() {
             onQueryClick = { navController.navigateToPokemonDetail(it.name) },
             onDismiss = { showSearch = false }
         )
-    }
-
-    LaunchedEffect(vm.pokemonSort) {
-        delay(100)
-        listState.animateScrollToItem(0)
     }
 
     var showSort by remember { mutableStateOf(false) }
@@ -190,35 +196,116 @@ fun PokedexScreen() {
             },
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
         ) { padding ->
-            Column(
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                state = listState,
+                contentPadding = padding,
                 modifier = Modifier
-                    .padding(padding)
                     .padding(vertical = 2.dp)
                     .fillMaxSize()
             ) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    state = listState
+                items(
+                    count = entries.itemCount,
+                    key = entries.itemKey { it.url },
+                    contentType = entries.itemContentType { it }
                 ) {
-                    items(
-                        count = entries.itemCount,
-                        key = entries.itemKey { it.url },
-                        contentType = entries.itemContentType { it }
-                    ) {
-                        val pokemon = entries[it]?.toPokemon()
-                        PokedexEntry(
-                            pokemon = pokemon,
-                            saved = saved,
-                            onClick = { pokemon?.name?.let(navController::navigateToPokemonDetail) },
-                            modifier = Modifier.animateItemPlacement()
-                        )
-                    }
+                    val pokemon = entries[it]
+                    PokedexEntry(
+                        pokemon = pokemon,
+                        saved = saved,
+                        onClick = { pokemon?.name?.let(navController::navigateToPokemonDetail) },
+                        modifier = Modifier.animateItemPlacement()
+                    )
                 }
             }
         }
     }
+
+    Animations()
+}
+
+@Composable
+private fun Animations() {
+    Box(
+        modifier = Modifier
+            .padding(top = 4.dp)
+            .fillMaxWidth(),
+        contentAlignment = Alignment.TopStart
+    ) {
+        Row {
+            val animation = rememberInfiniteTransition(label = "")
+            val color by animation.animateColor(
+                initialValue = Color(0xff3b4cca),
+                targetValue = Color(0xff1de9b6),
+                animationSpec = infiniteRepeatable(
+                    animation = tween(1000),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = ""
+            )
+            Box(
+                Modifier
+                    .size(60.dp)
+                    .background(color, CircleShape)
+                    .border(2.dp, Color.White, CircleShape)
+            )
+
+            Spacer(Modifier.width(2.dp))
+            Light(
+                color = Color.Red,
+                offColor = { it.copy(red = it.red * .8f) },
+                changeChance = { Random.nextInt(1, 10) % 2 == 0 },
+                delayAmount = 500
+            )
+            Spacer(Modifier.width(2.dp))
+            Light(
+                color = Color.Yellow,
+                offColor = {
+                    it.copy(
+                        red = it.red * .8f,
+                        green = it.green * .8f,
+                        blue = it.blue * .8f
+                    )
+                },
+                changeChance = { Random.nextInt(1, 50) % 2 == 1 },
+                delayAmount = 5000
+            )
+            Spacer(Modifier.width(2.dp))
+            Light(
+                color = Color.Green,
+                offColor = { it.copy(green = it.green * .8f) },
+                changeChance = { Random.nextInt(1, 100) == 25 },
+                delayAmount = 10000,
+            )
+        }
+    }
+}
+
+@Composable
+private fun Light(
+    color: Color,
+    offColor: (Color) -> Color,
+    delayAmount: Long,
+    changeChance: () -> Boolean,
+) {
+    val off = offColor(color)
+    var newColor by remember { mutableStateOf(off) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            newColor = if (changeChance()) off else color
+            delay(delayAmount)
+        }
+    }
+
+    Box(
+        Modifier
+            .size(20.dp)
+            .background(newColor, CircleShape)
+            .border(1.dp, Color.Black, CircleShape)
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -256,7 +343,7 @@ private fun PokedexEntry(
                 ) {
                     Text(pokemon.pokedexEntry)
                     if (saved.any { it.url == pokemon.url }) {
-                        Icon(Icons.Default.Favorite, null)
+                        Icon(Icons.Default.Bookmark, null)
                     }
                 }
                 val latestSwatch by rememberUpdatedState(newValue = swatchInfo)
@@ -465,4 +552,8 @@ private fun SearchPokemon(
 
 private data class SwatchInfo(val rgb: Color, val titleColor: Color, val bodyColor: Color)
 
-fun Int.toComposeColor() = Color(this)
+@Preview
+@Composable
+private fun AnimationsPreview() {
+    Animations()
+}

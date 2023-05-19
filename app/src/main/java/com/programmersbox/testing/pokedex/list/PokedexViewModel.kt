@@ -14,15 +14,20 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.cachedIn
+import androidx.paging.map
 import com.programmersbox.testing.pokedex.PokedexService
 import com.programmersbox.testing.pokedex.database.PokedexDatabase
 import com.programmersbox.testing.pokedex.database.PokemonRemoteMediator
+import com.programmersbox.testing.pokedex.database.toPokemon
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 
 class PokedexViewModel(
-    private val pokedexDatabase: PokedexDatabase,
+    pokedexDatabase: PokedexDatabase,
 ) : ViewModel() {
+
+    private val dao = pokedexDatabase.pokemonDao()
 
     var pokemonSort by mutableStateOf(PokemonSort.Index)
 
@@ -38,20 +43,20 @@ class PokedexViewModel(
                 remoteMediator = PokemonRemoteMediator(pokedexDatabase),
                 pagingSourceFactory = {
                     when (it) {
-                        PokemonSort.Index -> pokedexDatabase.pokemonDao().getPokemonPaging()
-                        PokemonSort.Alphabetical -> pokedexDatabase.pokemonDao()
-                            .getPokemonPagingAlphabet()
+                        PokemonSort.Index -> dao.getPokemonPaging()
+                        PokemonSort.Alphabetical -> dao.getPokemonPagingAlphabet()
                     }
                 }
             )
                 .flow
+                .map { it.map { p -> p.toPokemon() } }
                 .cachedIn(viewModelScope)
         }
 
     var searchQuery by mutableStateOf("")
 
     val searchList = snapshotFlow { searchQuery }
-        .flatMapLatest { pokedexDatabase.pokemonDao().searchPokemon("%$it%") }
+        .flatMapLatest { dao.searchPokemon("%$it%") }
 }
 
 enum class PokemonSort(val icon: ImageVector) {
