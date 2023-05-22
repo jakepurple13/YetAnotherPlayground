@@ -76,14 +76,14 @@ data class PokemonResponse(
     val count: Int,
     val next: String?,
     val previous: String?,
-    val results: List<Pokemon>
+    val results: List<Pokemon>,
 )
 
 @Serializable
 data class Pokemon(
     var page: Int = 0,
     val name: String,
-    val url: String
+    val url: String,
 ) {
     val pokedexEntry get() = url.split("/".toRegex()).dropLast(1).last()
     val imageUrl: String
@@ -108,8 +108,12 @@ data class PokemonInfo(
     @SerialName("base_experience") val experience: Int,
     val types: List<TypeResponse>,
     val stats: List<Stats>,
-    var pokemonDescription: PokemonDescription? = null
+    var pokemonDescription: PokemonDescription? = null,
 ) {
+
+    val cryUrl
+        get() =
+            "https://play.pokemonshowdown.com/audio/cries/${name.lowercase().replace("-", "")}.mp3"
 
     val imageUrl: String
         get() {
@@ -122,7 +126,7 @@ data class PokemonInfo(
     @Serializable
     data class TypeResponse(
         val slot: Int,
-        val type: Type
+        val type: Type,
     ) {
         fun getTypeColor() = when (type.name) {
             "fighting" -> 0xff9F422A
@@ -148,14 +152,14 @@ data class PokemonInfo(
 
     @Serializable
     data class Type(
-        val name: String
+        val name: String,
     )
 
     @Serializable
     data class Stats(
         @SerialName("base_stat")
         val baseStat: Int,
-        val stat: Stat
+        val stat: Stat,
     )
 
     @Serializable
@@ -186,7 +190,7 @@ data class PokemonInfo(
 @Serializable
 data class PokemonDescription(
     @SerialName("flavor_text_entries")
-    val flavorTextEntries: List<FlavorText>
+    val flavorTextEntries: List<FlavorText>,
 ) {
     val filtered by lazy {
         val tag = Locale.getDefault().language
@@ -212,7 +216,7 @@ data class FlavorText(
     @SerialName("flavor_text")
     val flavorText: String,
     val language: FlavorLanguage,
-    val version: Version
+    val version: Version,
 )
 
 @Serializable

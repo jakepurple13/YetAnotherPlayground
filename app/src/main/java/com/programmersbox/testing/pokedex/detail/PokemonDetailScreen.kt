@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Height
 import androidx.compose.material.icons.filled.Scale
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -96,7 +97,8 @@ fun PokemonDetailScreen() {
                 pokemon = target.pokemonInfo,
                 isSaved = vm.savedPokemon != null,
                 onSave = vm::save,
-                onDelete = vm::remove
+                onDelete = vm::remove,
+                onPlayCry = vm::playCry
             )
         }
     }
@@ -146,6 +148,7 @@ private fun ContentScreen(
     isSaved: Boolean,
     onSave: () -> Unit,
     onDelete: () -> Unit,
+    onPlayCry: (String) -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -153,7 +156,8 @@ private fun ContentScreen(
                 pokemon = pokemon,
                 isSaved = isSaved,
                 onSave = onSave,
-                onDelete = onDelete
+                onDelete = onDelete,
+                onPlayCry = onPlayCry
             )
         }
     ) { padding -> ContentBody(pokemon = pokemon, paddingValues = padding) }
@@ -333,6 +337,7 @@ private fun ContentHeader(
     isSaved: Boolean,
     onSave: () -> Unit,
     onDelete: () -> Unit,
+    onPlayCry: (String) -> Unit,
 ) {
     val navController = LocalNavController.current
     val surface = MaterialTheme.colorScheme.surface
@@ -368,6 +373,9 @@ private fun ContentHeader(
             },
             actions = {
                 Text("#${pokemon.id}")
+                IconButton(
+                    onClick = { onPlayCry(pokemon.cryUrl) }
+                ) { Icon(Icons.Default.VolumeUp, null) }
                 IconButton(
                     onClick = { if (isSaved) onDelete() else onSave() }
                 ) {

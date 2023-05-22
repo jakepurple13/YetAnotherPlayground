@@ -1,5 +1,8 @@
 package com.programmersbox.testing.pokedex.detail
 
+import android.media.AudioAttributes
+import android.media.AudioManager
+import android.media.MediaPlayer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -78,6 +81,27 @@ class PokemonDetailViewModel(
     fun remove() {
         viewModelScope.launch {
             savedPokemon?.let { savedDao.remove(it) }
+        }
+    }
+
+    fun playCry(url: String) {
+        viewModelScope.launch {
+            try {
+                val media = MediaPlayer()
+                media.setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setLegacyStreamType(AudioManager.STREAM_MUSIC)
+                        .build()
+                )
+                media.setDataSource(url)
+                media.prepareAsync()
+                media.setOnCompletionListener { media.release() }
+                media.setOnPreparedListener { it.start() }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 }
