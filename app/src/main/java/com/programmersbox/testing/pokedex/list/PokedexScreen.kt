@@ -25,10 +25,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListLayoutInfo
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
@@ -73,6 +75,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -103,6 +106,7 @@ import com.skydoves.landscapist.palette.PalettePlugin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
+import kotlin.math.absoluteValue
 import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -238,9 +242,11 @@ fun PokedexScreen() {
                     }
 
                     PokemonListType.List -> {
+                        val state = rememberLazyListState()
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(2.dp),
                             contentPadding = padding,
+                            state = state,
                             modifier = Modifier
                                 .padding(vertical = 2.dp)
                                 .fillMaxSize()
@@ -251,11 +257,21 @@ fun PokedexScreen() {
                                 contentType = entries.itemContentType { it }
                             ) {
                                 val pokemon = entries[it]
+                                val change = pokemon?.let { p ->
+                                    state.layoutInfo.normalizedItemPosition(p.url)
+                                }
                                 PokedexEntryList(
                                     pokemon = pokemon,
                                     saved = saved,
                                     onClick = { pokemon?.name?.let(navController::navigateToPokemonDetail) },
-                                    modifier = Modifier.animateItemPlacement()
+                                    modifier = Modifier
+                                        .animateItemPlacement()
+                                        .graphicsLayer {
+                                            change?.let { c ->
+                                                translationX = c.absoluteValue * 50
+                                                translationY = -c
+                                            }
+                                        }
                                 )
                             }
                         }
@@ -491,7 +507,7 @@ private fun PokedexEntryList(
                         Icon(Icons.Default.Bookmark, null)
                     }
                 },
-                overlineContent = { Text(pokemon.pokedexEntry) },
+                overlineContent = { Text("#${pokemon.pokedexEntry}") },
                 modifier = Modifier.padding(4.dp)
             )
         } else {
@@ -668,6 +684,13 @@ private fun SearchPokemon(
         }
     }
 }
+
+fun LazyListLayoutInfo.normalizedItemPosition(key: Any): Float = visibleItemsInfo
+    .firstOrNull { it.key == key }
+    ?.let {
+        val center = (viewportEndOffset + viewportStartOffset - it.size) / 2F
+        (it.offset.toFloat() - center) / center
+    } ?: 0F
 
 @Composable
 private fun EnterFullScreen() {
