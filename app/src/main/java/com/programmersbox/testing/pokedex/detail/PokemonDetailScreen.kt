@@ -80,7 +80,6 @@ fun PokemonDetailScreen() {
         )
     }
 
-
     Crossfade(targetState = vm.pokemonInfo, label = "") { target ->
         when (target) {
             DetailState.Error -> ErrorState(
