@@ -1,6 +1,7 @@
 package com.programmersbox.testing.pokedex.list
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
@@ -26,7 +27,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
@@ -74,6 +74,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -84,16 +86,17 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.programmersbox.testing.Screens
 import com.programmersbox.testing.pokedex.Pokemon
 import com.programmersbox.testing.pokedex.database.LocalPokedexDatabase
 import com.programmersbox.testing.pokedex.database.PokemonDb
 import com.programmersbox.testing.pokedex.database.SavedPokemon
 import com.programmersbox.testing.pokedex.navigateToPokemonDetail
+import com.programmersbox.testing.pokedex.pokedexPreferences
 import com.programmersbox.testing.ui.theme.LocalNavController
 import com.programmersbox.testing.ui.theme.firstCharCapital
 import com.programmersbox.testing.ui.theme.toComposeColor
+import com.skydoves.landscapist.ImageOptions
 import com.skydoves.landscapist.components.rememberImageComponent
 import com.skydoves.landscapist.glide.GlideImage
 import com.skydoves.landscapist.palette.PalettePlugin
@@ -105,8 +108,14 @@ import kotlin.random.Random
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun PokedexScreen() {
+    val context = LocalContext.current
     val pokedexDatabase = LocalPokedexDatabase.current
-    val vm = viewModel { PokedexViewModel(pokedexDatabase) }
+    val vm = viewModel {
+        PokedexViewModel(
+            pokedexDatabase,
+            context.pokedexPreferences
+        )
+    }
 
     val entries = vm.pager.collectAsLazyPagingItems()
 
@@ -115,7 +124,6 @@ fun PokedexScreen() {
         .savedPokemon()
         .collectAsStateWithLifecycle(initialValue = emptyList())
 
-    val listState = rememberLazyGridState()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val navController = LocalNavController.current
@@ -166,6 +174,10 @@ fun PokedexScreen() {
                     },
                     actions = {
                         IconButton(
+                            onClick = vm::toggleViewType
+                        ) { Icon(vm.pokemonListType.icon, null) }
+
+                        IconButton(
                             onClick = { showSort = true }
                         ) { Icon(vm.pokemonSort.icon, null) }
 
@@ -197,28 +209,57 @@ fun PokedexScreen() {
             },
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
         ) { padding ->
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                state = listState,
-                contentPadding = padding,
-                modifier = Modifier
-                    .padding(vertical = 2.dp)
-                    .fillMaxSize()
-            ) {
-                items(
-                    count = entries.itemCount,
-                    key = entries.itemKey { it.url },
-                    contentType = entries.itemContentType { it }
-                ) {
-                    val pokemon = entries[it]
-                    PokedexEntry(
-                        pokemon = pokemon,
-                        saved = saved,
-                        onClick = { pokemon?.name?.let(navController::navigateToPokemonDetail) },
-                        modifier = Modifier.animateItemPlacement()
-                    )
+            Crossfade(targetState = vm.pokemonListType, label = "") { target ->
+                when (target) {
+                    PokemonListType.Grid -> {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                            contentPadding = padding,
+                            modifier = Modifier
+                                .padding(vertical = 2.dp)
+                                .fillMaxSize()
+                        ) {
+                            items(
+                                count = entries.itemCount,
+                                key = entries.itemKey { it.url },
+                                contentType = entries.itemContentType { it }
+                            ) {
+                                val pokemon = entries[it]
+                                PokedexEntry(
+                                    pokemon = pokemon,
+                                    saved = saved,
+                                    onClick = { pokemon?.name?.let(navController::navigateToPokemonDetail) },
+                                    modifier = Modifier.animateItemPlacement()
+                                )
+                            }
+                        }
+                    }
+
+                    PokemonListType.List -> {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                            contentPadding = padding,
+                            modifier = Modifier
+                                .padding(vertical = 2.dp)
+                                .fillMaxSize()
+                        ) {
+                            items(
+                                count = entries.itemCount,
+                                key = entries.itemKey { it.url },
+                                contentType = entries.itemContentType { it }
+                            ) {
+                                val pokemon = entries[it]
+                                PokedexEntryList(
+                                    pokemon = pokemon,
+                                    saved = saved,
+                                    onClick = { pokemon?.name?.let(navController::navigateToPokemonDetail) },
+                                    modifier = Modifier.animateItemPlacement()
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -374,6 +415,85 @@ private fun PokedexEntry(
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
             }
+        } else {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .padding(4.dp)
+                    .fillMaxSize()
+            ) { CircularProgressIndicator() }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PokedexEntryList(
+    modifier: Modifier = Modifier,
+    pokemon: Pokemon?,
+    saved: List<SavedPokemon>,
+    onClick: () -> Unit,
+) {
+    val surface = MaterialTheme.colorScheme.surface
+    val defaultSwatch = SwatchInfo(
+        rgb = surface,
+        bodyColor = Color.Blue,
+        titleColor = contentColorFor(surface)
+    )
+    var swatchInfo by remember { mutableStateOf(defaultSwatch) }
+    ElevatedCard(
+        onClick = onClick,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = swatchInfo.rgb,
+            contentColor = swatchInfo.titleColor
+        ),
+        modifier = modifier.sizeIn(minHeight = 100.dp)
+    ) {
+        if (pokemon != null) {
+            ListItem(
+                colors = ListItemDefaults.colors(
+                    containerColor = swatchInfo.rgb,
+                    headlineColor = swatchInfo.titleColor,
+                    trailingIconColor = swatchInfo.titleColor,
+                    overlineColor = swatchInfo.titleColor,
+                ),
+                headlineContent = { Text(pokemon.name.firstCharCapital()) },
+                leadingContent = {
+                    val latestSwatch by rememberUpdatedState(newValue = swatchInfo)
+                    GlideImage(
+                        imageModel = { pokemon.imageUrl },
+                        component = rememberImageComponent {
+                            +PalettePlugin { p ->
+                                if (latestSwatch == defaultSwatch) {
+                                    p.dominantSwatch?.let { s ->
+                                        swatchInfo = SwatchInfo(
+                                            rgb = s.rgb.toComposeColor(),
+                                            titleColor = s.titleTextColor.toComposeColor(),
+                                            bodyColor = s.bodyTextColor.toComposeColor()
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        loading = {
+                            Box(modifier = Modifier.matchParentSize()) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.align(Alignment.Center)
+                                )
+                            }
+                        },
+                        imageOptions = ImageOptions(contentScale = ContentScale.Fit),
+                        modifier = Modifier.size(100.dp)
+                    )
+                },
+                trailingContent = {
+                    if (saved.any { it.url == pokemon.url }) {
+                        Icon(Icons.Default.Bookmark, null)
+                    }
+                },
+                overlineContent = { Text(pokemon.pokedexEntry) },
+                modifier = Modifier.padding(4.dp)
+            )
         } else {
             Box(
                 contentAlignment = Alignment.Center,
@@ -551,10 +671,10 @@ private fun SearchPokemon(
 
 @Composable
 private fun EnterFullScreen() {
-    val uiController = rememberSystemUiController()
     //TODO: This isn't working for some reason
     // it'll hide the status bar but it's like it loses the insets
-    /*LifecycleHandler(
+    /*val uiController = rememberSystemUiController()
+    LifecycleHandler(
         onStart = { uiController.isSystemBarsVisible = false },
         onDestroy = { uiController.isSystemBarsVisible = true }
     )*/

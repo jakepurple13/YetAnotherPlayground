@@ -1,5 +1,6 @@
 [versions]
 agp = "8.1.0-beta03"
+datastore = "1.0.0"
 org-jetbrains-kotlin-android = "1.8.21"
 core-ktx = "1.10.1"
 junit = "4.13.2"
@@ -18,8 +19,10 @@ landscapist = "2.1.13"
 radarny = "1.0.1"
 roomVersion = "2.5.1"
 pagingVersion = "3.1.1"
+protobufVersion = "3.23.0"
 
 [libraries]
+androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-test-ext-junit" }
@@ -64,14 +67,19 @@ pagingCompose = "androidx.paging:paging-compose:1.0.0-alpha19"
 
 systemUiController = "com.google.accompanist:accompanist-systemuicontroller:0.31.2-alpha"
 
+protobufJava = { module = "com.google.protobuf:protobuf-javalite", version.ref = "protobufVersion" }
+protobufKotlin = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobufVersion" }
+
 [plugins]
 com-android-application = { id = "com.android.application", version.ref = "agp" }
 org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "org-jetbrains-kotlin-android" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "org-jetbrains-kotlin-android" }
 ksp = { id = "com.google.devtools.ksp", version = "1.8.21-1.0.11" }
+protobuf = { id = "com.google.protobuf", version = "0.9.3" }
 
 [bundles]
 ktor = ["ktorCore", "ktorSerialization", "ktorContentNegotiation", "ktorSerializationJson", "ktorOkHttpEngine", "ktorLogging"]
 landscapist = ["landscapistGlide", "landscapistPalette", "landscapistPlaceholder"]
 roomLibs = ["roomRuntime", "roomKtx"]
 pagingLibs = ["pagingRuntime", "roomPaging"]
+protobuf = ["protobufJava", "protobufKotlin"]

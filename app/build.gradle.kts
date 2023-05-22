@@ -1,9 +1,12 @@
+import com.google.protobuf.gradle.id
+
 @Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
     alias(libs.plugins.com.android.application)
     alias(libs.plugins.org.jetbrains.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.protobuf)
 }
 
 android {
@@ -95,4 +98,22 @@ dependencies {
     implementation(libs.pagingCompose)
     implementation(libs.radarny)
     implementation(libs.systemUiController)
+    implementation(libs.androidx.datastore)
+    implementation(libs.bundles.protobuf)
+}
+
+protobuf {
+    protoc { artifact = "com.google.protobuf:protoc:3.23.0" }
+    plugins {
+        id("javalite") { artifact = libs.protobufJava.get().toString() }
+        id("kotlinlite") { artifact = libs.protobufKotlin.get().toString() }
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+                create("java") { option("lite") }
+                create("kotlin") { option("lite") }
+            }
+        }
+    }
 }
