@@ -736,6 +736,11 @@ private class ExoPlayerNoSessionAudioPlayerStateImpl(
         hasError = true
         it.printStackTrace()
     }
+
+    override fun clear() {
+        super.clear()
+        exoPlayer.release()
+    }
 }
 
 @LightAndDarkPreviews
