@@ -89,7 +89,17 @@ import kotlin.time.Duration.Companion.milliseconds
 fun AudioPlayerScreen() {
     val state = rememberAudioPlayerState("https://download.samplelib.com/mp3/sample-15s.mp3")
     val state2 =
-        rememberExoplayerAudioPlayerState("https://download.samplelib.com/mp3/sample-15s.mp3")
+        rememberExoPlayerAudioPlayerState("https://download.samplelib.com/mp3/sample-15s.mp3")
+    val state3 =
+        rememberExoPlayerNoSessionAudioPlayerState("https://download.samplelib.com/mp3/sample-15s.mp3")
+
+    val stateList = remember {
+        listOf(
+            state,
+            state2,
+            state3
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -98,8 +108,8 @@ fun AudioPlayerScreen() {
                 actions = {
                     Text("Auto Play?")
                     Switch(
-                        checked = state.autoPlay,
-                        onCheckedChange = { state.autoPlay = it }
+                        checked = stateList.all { it.autoPlay },
+                        onCheckedChange = { stateList.forEach { s -> s.autoPlay = it } }
                     )
                 }
             )
@@ -111,26 +121,22 @@ fun AudioPlayerScreen() {
                 ) {
                     Button(
                         onClick = {
-                            state.changeSong("https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3")
-                            state2.changeSong("https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3")
+                            stateList.forEach { it.changeSong("https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3") }
                         }
                     ) { Text("MP3") }
                     Button(
                         onClick = {
-                            state.changeSong("https://www2.cs.uic.edu/~i101/SoundFiles/BabyElephantWalk60.wav")
-                            state2.changeSong("https://www2.cs.uic.edu/~i101/SoundFiles/BabyElephantWalk60.wav")
+                            stateList.forEach { it.changeSong("https://www2.cs.uic.edu/~i101/SoundFiles/BabyElephantWalk60.wav") }
                         }
                     ) { Text("WAV") }
                     Button(
                         onClick = {
-                            state.changeSong("https://filesamples.com/samples/audio/m4a/sample2.m4a")
-                            state2.changeSong("https://filesamples.com/samples/audio/m4a/sample2.m4a")
+                            stateList.forEach { it.changeSong("https://filesamples.com/samples/audio/m4a/sample2.m4a") }
                         }
                     ) { Text("M4A") }
                     Button(
                         onClick = {
-                            state.changeSong("")
-                            state2.changeSong("")
+                            stateList.forEach { it.changeSong("") }
                         }
                     ) { Text("Nothing") }
                 }
@@ -148,6 +154,7 @@ fun AudioPlayerScreen() {
         ) {
             AudioPlayer(state = state)
             AudioPlayer(state = state2)
+            AudioPlayer(state = state3)
         }
     }
 }
@@ -290,25 +297,35 @@ private fun formatSongTime(value: Int): String {
 fun rememberAudioPlayerState(
     songUrl: String? = null,
     shouldAutoPlay: Boolean = false,
-): AudioPlayerState {
-    return if (LocalInspectionMode.current) {
-        remember { MockAudioPlayerState() }
-    } else {
-        remember { AudioPlayerStateImpl(songUrl, shouldAutoPlay) }
-    }
+): AudioPlayerState = rememberAudioState {
+    remember { AudioPlayerStateImpl(songUrl, shouldAutoPlay) }
 }
 
 @Composable
-fun rememberExoplayerAudioPlayerState(
+fun rememberExoPlayerAudioPlayerState(
     songUrl: String? = null,
     shouldAutoPlay: Boolean = false,
-): AudioPlayerState {
-    return if (LocalInspectionMode.current) {
-        remember { MockAudioPlayerState() }
-    } else {
-        val context = LocalContext.current
-        remember { ExoPlayerAudioPlayerStateImpl(songUrl, shouldAutoPlay, context) }
-    }
+): AudioPlayerState = rememberAudioState {
+    val context = LocalContext.current
+    remember { ExoPlayerAudioPlayerStateImpl(songUrl, shouldAutoPlay, context) }
+}
+
+@Composable
+fun rememberExoPlayerNoSessionAudioPlayerState(
+    songUrl: String? = null,
+    shouldAutoPlay: Boolean = false,
+): AudioPlayerState = rememberAudioState {
+    val context = LocalContext.current
+    remember { ExoPlayerNoSessionAudioPlayerStateImpl(songUrl, shouldAutoPlay, context) }
+}
+
+@Composable
+private fun rememberAudioState(
+    state: @Composable () -> AudioPlayerState,
+): AudioPlayerState = if (LocalInspectionMode.current) {
+    remember { MockAudioPlayerState() }
+} else {
+    state()
 }
 
 abstract class AudioPlayerState {
@@ -510,15 +527,6 @@ private class ExoPlayerAudioPlayerStateImpl(
         snapshotFlow { autoPlay }
             .onEach { if (::exoPlayer.isInitialized) exoPlayer.playWhenReady = it }
             .launchIn(scope)
-
-        //TODO: THIS WORKS! THIS WILL PLAY AUDIO!
-        /*exoPlayer = ExoPlayer.Builder(context)
-            .setAudioAttributes(
-                AudioAttributes.DEFAULT,
-                true
-            )
-            .setMediaSourceFactory(ProgressiveMediaSource.Factory(DefaultHttpDataSource.Factory()))
-            .build()*/
     }
 
     private fun setup(mediaController: MediaController, songUrl: String?) {
@@ -529,7 +537,6 @@ private class ExoPlayerAudioPlayerStateImpl(
                 ?.let { MediaItem.Builder().setMediaId(it).build() }
                 ?.let { mediaController.setMediaItem(it) }
             mediaController.prepare()
-            mediaController.play()
         }
         mediaController.addListener(
             object : Player.Listener {
@@ -568,7 +575,6 @@ private class ExoPlayerAudioPlayerStateImpl(
         isReady = false
         exoPlayer.setMediaItem(MediaItem.Builder().setMediaId(url).build())
         exoPlayer.prepare()
-        exoPlayer.play()
         isReady = true
     }.onFailure {
         hasError = true
@@ -578,7 +584,7 @@ private class ExoPlayerAudioPlayerStateImpl(
 
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 class PlaybackService : MediaSessionService() {
-    private lateinit var mediaSession: MediaSession
+    private var mediaSession: MediaSession? = null
 
     @UnstableApi
     override fun onCreate() {
@@ -593,13 +599,14 @@ class PlaybackService : MediaSessionService() {
             .build()
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession =
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? =
         mediaSession
 
     override fun onDestroy() {
-        mediaSession.run {
+        mediaSession?.run {
             player.release()
             release()
+            mediaSession = null
         }
         super.onDestroy()
     }
@@ -615,6 +622,113 @@ class PlaybackService : MediaSessionService() {
                 .toMutableList()
             return Futures.immediateFuture(updatedMediaItems)
         }
+    }
+}
+
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+private class ExoPlayerNoSessionAudioPlayerStateImpl(
+    songUrl: String? = null,
+    shouldAutoPlay: Boolean = false,
+    context: Context,
+) : AudioPlayerState() {
+
+    private val exoPlayer by lazy {
+        ExoPlayer.Builder(context)
+            .setAudioAttributes(
+                AudioAttributes.DEFAULT,
+                true
+            )
+            .setMediaSourceFactory(ProgressiveMediaSource.Factory(DefaultHttpDataSource.Factory()))
+            .build()
+    }
+
+    override var currentPlaybackPosition by mutableIntStateOf(0)
+
+    override var autoPlay: Boolean by mutableStateOf(shouldAutoPlay)
+
+    override var isReady by mutableStateOf(false)
+
+    override val currentPlayerPosition: Float
+        get() {
+            return currentPlaybackPosition.toFloat() / currentSongDuration.coerceAtLeast(1)
+        }
+
+    override var isPlaying by mutableStateOf(false)
+
+    override val currentSongDuration: Int get() = exoPlayer.duration.toInt()
+
+    override var hasError: Boolean by mutableStateOf(false)
+
+    init {
+        flow {
+            while (currentCoroutineContext().isActive) {
+                emit(Unit)
+                delay(1.milliseconds)
+            }
+        }
+            .onEach {
+                exoPlayer.let {
+                    currentPlaybackPosition = it.currentPosition.toInt()
+                    isPlaying = it.isPlaying
+                }
+            }
+            .launchIn(scope)
+
+        snapshotFlow { autoPlay }
+            .onEach { exoPlayer.playWhenReady = it }
+            .launchIn(scope)
+
+        setup(songUrl)
+    }
+
+    private fun setup(songUrl: String?) {
+        isReady = true
+        exoPlayer.playWhenReady = autoPlay
+        songUrl
+            ?.let { MediaItem.fromUri(it) }
+            ?.let { exoPlayer.setMediaItem(it) }
+        exoPlayer.prepare()
+        exoPlayer.addListener(
+            object : Player.Listener {
+                override fun onPlayerError(error: PlaybackException) {
+                    super.onPlayerError(error)
+                    error.printStackTrace()
+                    hasError = true
+                }
+            }
+        )
+    }
+
+    override fun playPause() {
+        if (exoPlayer.isPlaying) {
+            exoPlayer.pause()
+        } else {
+            exoPlayer.play()
+        }
+    }
+
+    override fun seekTo(seek: Float) {
+        exoPlayer.seekTo((currentSongDuration * seek).roundToLong())
+    }
+
+    override fun fastForward() {
+        exoPlayer.seekTo(exoPlayer.currentPosition + 10 * 1000)
+    }
+
+    override fun rewind() {
+        val currentPosition = exoPlayer.currentPosition
+        exoPlayer.seekTo(if (currentPosition - 10 * 1000 < 0) 0 else currentPosition - 10 * 1000)
+    }
+
+    override fun changeSong(url: String) = runCatching {
+        exoPlayer.stop()
+        isReady = false
+        exoPlayer.setMediaItem(MediaItem.fromUri(url))
+        exoPlayer.prepare()
+        isReady = true
+    }.onFailure {
+        hasError = true
+        it.printStackTrace()
     }
 }
 
