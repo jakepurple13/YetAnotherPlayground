@@ -102,6 +102,8 @@ dependencies {
     implementation(libs.androidx.datastore)
     implementation(libs.bundles.protobuf)
 
+    implementation(libs.androidx.legacy.support.v4)
+
     // For media playback using ExoPlayer
     implementation(libs.androidx.media3.exoplayer)
     // For DASH playback support with ExoPlayer

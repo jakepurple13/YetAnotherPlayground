@@ -1,6 +1,7 @@
 [versions]
 agp = "8.1.0-beta03"
 datastore = "1.0.0"
+legacySupportV4 = "1.0.0"
 media3 = "1.0.2"
 org-jetbrains-kotlin-android = "1.8.21"
 core-ktx = "1.10.1"
@@ -24,6 +25,7 @@ protobufVersion = "3.23.0"
 
 [libraries]
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
+androidx-legacy-support-v4 = { module = "androidx.legacy:legacy-support-v4", version.ref = "legacySupportV4" }
 androidx-media3-datasource-rtmp = { module = "androidx.media3:media3-datasource-rtmp", version.ref = "media3" }
 androidx-media3-datasource-okhttp = { module = "androidx.media3:media3-datasource-okhttp", version.ref = "media3" }
 androidx-media3-datasource-cronet = { module = "androidx.media3:media3-datasource-cronet", version.ref = "media3" }

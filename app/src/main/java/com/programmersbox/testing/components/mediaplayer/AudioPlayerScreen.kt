@@ -5,6 +5,7 @@ import android.content.Context
 import android.media.AudioManager
 import android.media.MediaPlayer
 import androidx.annotation.CallSuper
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -15,6 +16,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Forward10
 import androidx.compose.material.icons.rounded.PauseCircleFilled
@@ -49,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.AudioAttributes
@@ -150,10 +154,14 @@ fun AudioPlayerScreen() {
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(padding)
         ) {
+            Text("Media Player")
             AudioPlayer(state = state)
+            Text("ExoPlayer with Session")
             AudioPlayer(state = state2)
+            Text("ExoPlayer No Session")
             AudioPlayer(state = state3)
         }
     }
@@ -583,7 +591,7 @@ private class ExoPlayerAudioPlayerStateImpl(
 }
 
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
-class PlaybackService : MediaSessionService() {
+class PlaybackService : MediaSessionService(), MediaSession.Callback {
     private var mediaSession: MediaSession? = null
 
     @UnstableApi
@@ -595,7 +603,7 @@ class PlaybackService : MediaSessionService() {
             .build()
 
         mediaSession = MediaSession.Builder(this, player)
-            .setCallback(CustomMediaSessionCallback())
+            .setCallback(this)
             .build()
     }
 
@@ -611,17 +619,15 @@ class PlaybackService : MediaSessionService() {
         super.onDestroy()
     }
 
-    private inner class CustomMediaSessionCallback : MediaSession.Callback {
-        override fun onAddMediaItems(
-            mediaSession: MediaSession,
-            controller: MediaSession.ControllerInfo,
-            mediaItems: MutableList<MediaItem>,
-        ): ListenableFuture<MutableList<MediaItem>> {
-            val updatedMediaItems = mediaItems
-                .map { it.buildUpon().setUri(it.mediaId).build() }
-                .toMutableList()
-            return Futures.immediateFuture(updatedMediaItems)
-        }
+    override fun onAddMediaItems(
+        mediaSession: MediaSession,
+        controller: MediaSession.ControllerInfo,
+        mediaItems: MutableList<MediaItem>,
+    ): ListenableFuture<MutableList<MediaItem>> {
+        val updatedMediaItems = mediaItems
+            .map { it.buildUpon().setUri(it.mediaId).build() }
+            .toMutableList()
+        return Futures.immediateFuture(updatedMediaItems)
     }
 }
 
