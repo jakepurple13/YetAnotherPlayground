@@ -98,8 +98,32 @@ dependencies {
     implementation(libs.pagingCompose)
     implementation(libs.radarny)
     implementation(libs.systemUiController)
+    implementation(libs.permissions)
     implementation(libs.androidx.datastore)
     implementation(libs.bundles.protobuf)
+
+    // For media playback using ExoPlayer
+    implementation(libs.androidx.media3.exoplayer)
+    // For DASH playback support with ExoPlayer
+    implementation(libs.androidx.media3.exoplayer.dash)
+    // For HLS playback support with ExoPlayer
+    implementation(libs.androidx.media3.exoplayer.hls)
+    // For RTSP playback support with ExoPlayer
+    implementation(libs.androidx.media3.exoplayer.rtsp)
+    // For ad insertion using the Interactive Media Ads SDK with ExoPlayer
+    implementation(libs.androidx.media3.exoplayer.ima)
+
+    // For loading data using the Cronet network stack
+    implementation(libs.androidx.media3.datasource.cronet)
+    // For loading data using the OkHttp network stack
+    implementation(libs.androidx.media3.datasource.okhttp)
+    // For loading data using librtmp
+    implementation(libs.androidx.media3.datasource.rtmp)
+    // For exposing and controlling media sessions
+    implementation(libs.androidx.media3.session)
+    // For building media playback UIs
+    implementation(libs.androidx.media3.ui)
+
 }
 
 protobuf {
