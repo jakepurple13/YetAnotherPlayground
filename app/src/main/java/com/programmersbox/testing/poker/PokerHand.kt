@@ -150,16 +150,16 @@ enum class PokerHand(
                     count = 1
                 }
                 i++
-
-
             }
 
+            @Suppress("KotlinConstantConditions")
             if (count == 2) {
                 found1 = true
             } else if (count == 2 && found1) {
                 found = true
             }
 
+            @Suppress("KotlinConstantConditions")
             return found && found1
         }
     },

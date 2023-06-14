@@ -440,12 +440,8 @@ fun PlayerHand(
                 .draggable(
                     state = rememberDraggableState { delta -> onHandDragged(-delta) },
                     orientation = Orientation.Horizontal,
-                    onDragStarted = {
-                        isHandBeingDragged = true
-                    },
-                    onDragStopped = {
-                        isHandBeingDragged = false
-                    }
+                    onDragStarted = { isHandBeingDragged = true },
+                    onDragStopped = { isHandBeingDragged = false }
                 )
         )
         Icon(Icons.Default.RotateLeft, null)
