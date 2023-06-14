@@ -1,8 +1,8 @@
 [versions]
-agp = "8.1.0-beta03"
+agp = "8.1.0-beta05"
 datastore = "1.0.0"
 legacySupportV4 = "1.0.0"
-media3 = "1.0.2"
+media3 = "1.1.0-alpha01"
 org-jetbrains-kotlin-android = "1.8.21"
 core-ktx = "1.10.1"
 junit = "4.13.2"
@@ -43,6 +43,7 @@ espresso-core = { group = "androidx.test.espresso", name = "espresso-core", vers
 lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle-runtime-ktx" }
 activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activity-compose" }
 compose-bom = { module = "dev.chrisbanes.compose:compose-bom", version.ref = "compose-bom" }
+#compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
 radarny = { module = "ink.lodz:radarny", version.ref = "radarny" }
 ui = { group = "androidx.compose.ui", name = "ui" }
 ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }

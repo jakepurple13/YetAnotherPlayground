@@ -56,6 +56,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.AudioAttributes
+import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -234,6 +235,13 @@ private fun AudioPlayer(
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
+                AnimatedVisibility(isSeeking) {
+                    Text(
+                        formatSongTime((currentSongDuration * sliderProgress).roundToInt()),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 Slider(
                     value = sliderProgress,
                     onValueChange = {
@@ -524,13 +532,10 @@ private class ExoPlayerAudioPlayerStateImpl(
             }
             .launchIn(scope)
 
-        controller.addListener(
-            {
-                exoPlayer = controller.get()
-                setup(controller.get(), songUrl)
-            },
-            MoreExecutors.directExecutor()
-        )
+        controller.futureListener {
+            exoPlayer = it
+            setup(it, songUrl)
+        }
 
         snapshotFlow { autoPlay }
             .onEach { if (::exoPlayer.isInitialized) exoPlayer.playWhenReady = it }
@@ -588,6 +593,13 @@ private class ExoPlayerAudioPlayerStateImpl(
         hasError = true
         it.printStackTrace()
     }
+
+    private fun <T> ListenableFuture<T>.futureListener(block: (T) -> Unit) {
+        addListener(
+            { block(get()) },
+            MoreExecutors.directExecutor()
+        )
+    }
 }
 
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
@@ -602,7 +614,23 @@ class PlaybackService : MediaSessionService(), MediaSession.Callback {
             .setMediaSourceFactory(ProgressiveMediaSource.Factory(DefaultHttpDataSource.Factory()))
             .build()
 
-        mediaSession = MediaSession.Builder(this, player)
+        //TODO: When closing the poi, stop audio
+        val forwardingPlayer = object : ForwardingPlayer(player) {
+            override fun getAvailableCommands(): Player.Commands {
+                return super.getAvailableCommands()
+                    .buildUpon()
+                    //TODO: THIS FINE!
+                    .remove(Player.COMMAND_SEEK_TO_PREVIOUS)
+                    .remove(Player.COMMAND_SEEK_TO_NEXT)
+                    .build()
+            }
+
+            override fun isCommandAvailable(command: Int): Boolean {
+                return availableCommands.contains(command)
+            }
+        }
+
+        mediaSession = MediaSession.Builder(this, forwardingPlayer)
             .setCallback(this)
             .build()
     }

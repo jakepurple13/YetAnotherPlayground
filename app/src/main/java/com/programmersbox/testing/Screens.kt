@@ -7,6 +7,8 @@ import com.programmersbox.testing.components.limitedbottomsheetscaffold.LimitedB
 import com.programmersbox.testing.components.mediaplayer.AudioPlayerScreen
 import com.programmersbox.testing.pokedex.detail.PokemonDetailScreen
 import com.programmersbox.testing.pokedex.list.PokedexScreen
+import com.programmersbox.testing.poker.GameScreen
+import com.programmersbox.testing.poker.Poker
 
 enum class Screens(
     val screen: @Composable () -> Unit
@@ -21,7 +23,9 @@ enum class Screens(
         override val route: String get() = "$name/{name}"
     },
     DynamicThemeLoadingScreen(screen = { DynamicThemeLoadingPreview() }),
-    AudioPlayer(screen = { AudioPlayerScreen() });
+    AudioPlayer(screen = { AudioPlayerScreen() }),
+    CardGame(screen = { GameScreen() }),
+    PokerGame(screen = { Poker() });
 
     open val route: String = name
 
