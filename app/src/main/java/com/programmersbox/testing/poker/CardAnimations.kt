@@ -156,10 +156,11 @@ fun HandAndCards(
     onCardDropPress: (Card) -> Unit = { droppedCards.remove(it) },
     onCardDropped: (Card) -> Unit = { droppedCards.add(it) },
     canDrag: Boolean = true,
+    resetActiveCardKeys: Array<Any> = arrayOf(),
 ) {
     val density = LocalDensity.current
     var cardsSpreadDegree by remember { mutableFloatStateOf(10f) }
-    var activeCard by remember { mutableStateOf<Card?>(null) }
+    var activeCard by remember(*resetActiveCardKeys) { mutableStateOf<Card?>(null) }
 
     BoxWithConstraints(
         modifier = modifier
@@ -267,6 +268,33 @@ fun CardItem(
         }
         onCardDropPress(it)
     }
+    val dropCard = { it: Card ->
+        val targetOffset = getTargetOffset()
+        val remainingOffset = targetOffset - cardOriginalOffset
+        if (SHOW_LOGS) {
+            println("targetOffset: $targetOffset")
+            println("remainingOffset: $remainingOffset")
+        }
+        scope.launch {
+            cardDragX.animateTo(
+                targetValue = remainingOffset.x,
+                animationSpec = tween(
+                    durationMillis = 800,
+                    easing = EaseInOut
+                )
+            )
+        }
+        scope.launch {
+            cardDragY.animateTo(
+                targetValue = remainingOffset.y,
+                animationSpec = tween(
+                    durationMillis = 800,
+                    easing = EaseInOut
+                )
+            )
+        }
+        onCardDropped(it)
+    }
 
     PlayingCard(
         card = card,
@@ -295,13 +323,15 @@ fun CardItem(
             .clip(MaterialTheme.shapes.small)
             .pointerInput(activeCard) {
                 detectTapGestures(
-                    onTap = {
+                    onTap = { setActiveCard(if (activeCard == card) null else card) },
+                    onDoubleTap = {
                         if (isDropped) {
                             resetCard(card)
                             return@detectTapGestures
+                        } else {
+                            dropCard(card)
                         }
-                        setActiveCard(if (activeCard == card) null else card)
-                    },
+                    }
                 )
             }
             .then(
@@ -309,7 +339,7 @@ fun CardItem(
                     Modifier.pointerInput(Unit) {
                         detectDragGestures(
                             onDragStart = { startOffset ->
-                                println("startOffset: $startOffset")
+                                if (SHOW_LOGS) println("startOffset: $startOffset")
                                 isBeingDragged = true
                                 setActiveCard(card)
                                 onCardDropPress(card)
@@ -325,35 +355,15 @@ fun CardItem(
                                     dragOffset,
                                     Offset.Zero
                                 )
-                                val targetOffset = getTargetOffset()
 
-                                println("targetOffset: $targetOffset")
-                                println("originalOffset: $cardOriginalOffset")
-                                println("drag offset: ${cardDragX.value}, ${cardDragY.value}")
-                                println("Distance: $distance")
+                                if (SHOW_LOGS) {
+                                    println("originalOffset: $cardOriginalOffset")
+                                    println("drag offset: ${cardDragX.value}, ${cardDragY.value}")
+                                    println("Distance: $distance")
+                                }
 
                                 if (distance > DISTANCE_TO_DROP) {
-                                    val remainingOffset = targetOffset - cardOriginalOffset
-                                    println("remainingOffset: $remainingOffset")
-                                    scope.launch {
-                                        cardDragX.animateTo(
-                                            targetValue = remainingOffset.x,
-                                            animationSpec = tween(
-                                                durationMillis = 800,
-                                                easing = EaseInOut
-                                            )
-                                        )
-                                    }
-                                    scope.launch {
-                                        cardDragY.animateTo(
-                                            targetValue = remainingOffset.y,
-                                            animationSpec = tween(
-                                                durationMillis = 800,
-                                                easing = EaseInOut
-                                            )
-                                        )
-                                    }
-                                    onCardDropped(card)
+                                    dropCard(card)
                                 } else {
                                     resetCard(card)
                                 }
@@ -451,6 +461,7 @@ fun calculateDistanceBetweenTwoPoints(x1: Float, y1: Float, x2: Float, y2: Float
 }
 
 private const val DISTANCE_TO_DROP = 250 //defaults to 500
+private const val SHOW_LOGS = false
 
 @Preview(showBackground = true)
 @Composable

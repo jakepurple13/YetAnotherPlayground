@@ -55,8 +55,9 @@ class PokerViewModel : ViewModel() {
     }
 
     fun end(snackbarHostState: SnackbarHostState) {
-        val winnings =
-            PokerHand.values().first { it.check(hand) }.let { it.initialWinning * currentBet }
+        val winnings = PokerHand.values()
+            .first { it.check(hand) }
+            .let { it.initialWinning * currentBet }
         viewModelScope.launch {
             snackbarHostState.currentSnackbarData?.dismiss()
             if (winnings > 0) {

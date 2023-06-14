@@ -3,9 +3,8 @@ package com.programmersbox.testing.poker
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.RemoveCircle
@@ -13,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -37,11 +37,13 @@ fun Poker(vm: PokerViewModel = viewModel()) {
                 cards = vm.hand,
                 droppedCards = vm.cardsToDiscard,
                 canDrag = vm.state == PokerState.Swap,
+                resetActiveCardKeys = arrayOf(vm.state),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp)
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = PokerTableGreen
     ) { p ->
         Column(
@@ -58,31 +60,41 @@ fun Poker(vm: PokerViewModel = viewModel()) {
                 null
             }
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(6),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalArrangement = Arrangement.SpaceBetween
+            Column(
+                verticalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 PokerHand.values().forEach { h ->
-                    item {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier
+                            .background(
+                                animateColorAsState(
+                                    if (check == h) MaterialTheme.colorScheme.surface else Color.Transparent,
+                                    label = ""
+                                ).value
+                            )
+                            .fillMaxWidth()
+                    ) {
                         Text(
                             h.shortenedName,
                             color = animateColorAsState(
                                 targetValue = if (check == h) Alizarin else LocalContentColor.current,
                                 label = ""
-                            ).value
-                        )
-                    }
-
-                    items(5) {
-                        Text(
-                            "${h.initialWinning * (it + 1)}",
-                            color = animateColorAsState(
-                                targetValue = if (vm.currentBet == (it + 1)) Emerald else LocalContentColor.current,
-                                label = ""
                             ).value,
-                            textAlign = TextAlign.End
+                            modifier = Modifier.weight(1f)
                         )
+                        repeat(5) {
+                            Text(
+                                "${h.initialWinning * (it + 1)}",
+                                color = animateColorAsState(
+                                    targetValue = if (vm.currentBet == (it + 1)) Emerald else LocalContentColor.current,
+                                    label = ""
+                                ).value,
+                                textAlign = TextAlign.End,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
             }
