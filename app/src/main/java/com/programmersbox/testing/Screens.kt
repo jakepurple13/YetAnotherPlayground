@@ -2,6 +2,8 @@ package com.programmersbox.testing
 
 import androidx.compose.runtime.Composable
 import com.programmersbox.testing.chess.ChessScreenPreview
+import com.programmersbox.testing.components.LookaheadCustomTest
+import com.programmersbox.testing.components.LookaheadWithLazyColumn
 import com.programmersbox.testing.components.dynamicthemeloading.DynamicThemeLoadingPreview
 import com.programmersbox.testing.components.limitedbottomsheetscaffold.LimitedBottomSheetScaffoldPreview
 import com.programmersbox.testing.components.mediaplayer.AudioPlayerScreen
@@ -25,7 +27,9 @@ enum class Screens(
     DynamicThemeLoadingScreen(screen = { DynamicThemeLoadingPreview() }),
     AudioPlayer(screen = { AudioPlayerScreen() }),
     CardGame(screen = { GameScreen() }),
-    PokerGame(screen = { Poker() });
+    PokerGame(screen = { Poker() }),
+    LookaheadFun(screen = { LookaheadWithLazyColumn() }),
+    LookaheadCustom(screen = { LookaheadCustomTest() });
 
     open val route: String = name
 

@@ -11,12 +11,12 @@ plugins {
 
 android {
     namespace = "com.programmersbox.testing"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.programmersbox.testing"
         minSdk = 24
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -51,6 +51,7 @@ android {
     }
     kotlinOptions {
         jvmTarget = "1.8"
+        freeCompilerArgs = listOf("-Xcontext-receivers")
     }
     buildFeatures {
         compose = true
@@ -93,6 +94,7 @@ dependencies {
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
     implementation(libs.bundles.roomLibs)
+    annotationProcessor(libs.roomAnnotationProcessor)
     ksp(libs.roomCompiler)
     implementation(libs.bundles.pagingLibs)
     implementation(libs.pagingCompose)

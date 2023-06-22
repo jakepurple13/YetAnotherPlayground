@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
@@ -95,7 +96,8 @@ fun LimitedBottomSheetScaffold(
                 sheetSwipeEnabled = bottomSheet.sheetSwipeEnabled,
                 sheetContent = sheetContent,
                 containerColor = Color.Transparent,
-                contentColor = Color.Transparent
+                contentColor = Color.Transparent,
+                modifier = Modifier.height(0.dp)
             ) {}
         }
     }
