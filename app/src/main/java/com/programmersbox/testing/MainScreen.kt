@@ -1,5 +1,7 @@
 package com.programmersbox.testing
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -11,6 +13,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import com.programmersbox.testing.pokedex.database.LocalPokemonDao
 import com.programmersbox.testing.ui.theme.LocalNavController
 import kotlinx.coroutines.launch
@@ -31,14 +35,17 @@ fun MainScreen() {
                     onClick = { navController.navigate(it.route) { launchSingleTop = true } }
                 ) { Text(it.name) }
             }
-
-            item {
-                val scope = rememberCoroutineScope()
-                val p = LocalPokemonDao.current
-                Button(
-                    onClick = { scope.launch { p.clearAll() } }
-                ) { Text("Clear Pokedex Database!") }
-            }
         }
+    }
+}
+
+@Composable
+fun ClearPokedexDb() {
+    val scope = rememberCoroutineScope()
+    val p = LocalPokemonDao.current
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Button(
+            onClick = { scope.launch { p.clearAll() } }
+        ) { Text("Clear Pokedex Database!") }
     }
 }

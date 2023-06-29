@@ -1,4 +1,4 @@
-package com.programmersbox.testing.components
+package com.programmersbox.testing.components.lookahead
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility

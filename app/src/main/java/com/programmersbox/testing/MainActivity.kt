@@ -8,9 +8,13 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.movableContentWithReceiverOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.navigation.compose.NavHost
@@ -18,6 +22,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
+import com.programmersbox.testing.components.lookahead.SceneHost
+import com.programmersbox.testing.components.lookahead.SceneScope
 import com.programmersbox.testing.ui.theme.LocalNavController
 import com.programmersbox.testing.ui.theme.TestingTheme
 
@@ -29,20 +35,33 @@ class MainActivity : ComponentActivity() {
             TestingTheme {
                 AskForNotificationPermissions()
                 val navController = rememberNavController()
+                val textSharedMove = remember {
+                    movableContentWithReceiverOf<SceneScope, Modifier> { modifier ->
+                        Text(
+                            "Hello!",
+                            modifier = Modifier
+                                .sharedElement()
+                                .then(modifier)
+                        )
+                    }
+                }
                 CompositionLocalProvider(
-                    LocalNavController provides navController
+                    LocalNavController provides navController,
+                    LocalTextMoveComposable provides textSharedMove
                 ) {
                     // A surface container using the 'background' color from the theme
                     Surface(
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background
                     ) {
-                        NavHost(
-                            navController = navController,
-                            startDestination = Screens.MainScreen.route
-                        ) {
-                            Screens.values().forEach { screen ->
-                                composable(screen.route) { screen.screen() }
+                        SceneHost {
+                            NavHost(
+                                navController = navController,
+                                startDestination = Screens.MainScreen.route,
+                            ) {
+                                Screens.values().forEach { screen ->
+                                    composable(screen.route) { screen.screen(this@SceneHost) }
+                                }
                             }
                         }
                     }
@@ -61,3 +80,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+val LocalTextMoveComposable =
+    compositionLocalOf<@Composable SceneScope.(Modifier) -> Unit> { error("") }
