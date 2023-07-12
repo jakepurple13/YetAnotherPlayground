@@ -17,6 +17,25 @@ private val PACKAGE_FLAGS =
         PackageManager.GET_SIGNATURES
     }
 
+/**
+ * Use this to load code from other apks!
+ *
+ * Make sure you are creating those apks and they are installed as applications.
+ *
+ * @param extensionFeature this should match what you set in the extension module at the manifest level:
+ * ```xml
+ * <uses-feature android:name="{extensionFeature}" />
+ * ```
+ *
+ * @param metadataClass this should match what you set in the extension module at the application level:
+ * ```xml
+ * <application ...>
+ *      <meta-data android:name="{metadataClass}" android:value="${extClass}" />
+ * </application>
+ * ```
+ * This should match the class name of what you want to access and load.
+ * If you want to include other metadata types, add more metadata attributes!
+ */
 class ExtensionLoader<T, R>(
     private val context: Context,
     private val extensionFeature: String,
