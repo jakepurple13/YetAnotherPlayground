@@ -1,9 +1,6 @@
 package com.programmersbox.testing.components
 
 import android.content.Context
-import android.content.pm.ApplicationInfo
-import android.content.pm.PackageInfo
-import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -28,11 +25,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.programmersbox.dynamiccodeloading.RandomNumbers
+import com.programmersbox.extensionloader.ExtensionLoader
 import com.skydoves.landscapist.rememberDrawablePainter
-import dalvik.system.PathClassLoader
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,51 +98,3 @@ data class DynamicRandomNumber(
     val randomNumbers: RandomNumbers,
     val icon: Drawable?
 )
-
-class ExtensionLoader<T, R>(
-    private val context: Context,
-    private val extensionFeature: String,
-    private val metadataClass: String,
-    private val mapping: (T, ApplicationInfo) -> R
-) {
-    suspend fun loadExtensions(): List<R> {
-        val packages = context.packageManager
-            ?.getInstalledPackages(PackageManager.GET_CONFIGURATIONS)
-            ?.filter { it.reqFeatures.orEmpty().any { it.name == extensionFeature } }
-            .orEmpty()
-
-        return runBlocking {
-            packages
-                .map { async { loadOne(it) } }
-                .flatMap { it.await() }
-        }
-    }
-
-    private fun loadOne(packageInfo: PackageInfo): List<R> {
-        val appInfo = context.packageManager.getApplicationInfo(
-            packageInfo.packageName,
-            PackageManager.GET_META_DATA
-        )
-
-        val classLoader = PathClassLoader(appInfo.sourceDir, null, context.classLoader)
-
-        return appInfo.metaData.getString(metadataClass)
-            .orEmpty()
-            .split(";")
-            .map {
-                val sourceClass = it.trim()
-                if (sourceClass.startsWith(".")) {
-                    packageInfo.packageName + sourceClass
-                } else {
-                    sourceClass
-                }
-            }
-            .mapNotNull {
-                @Suppress("UNCHECKED_CAST")
-                Class.forName(it, false, classLoader)
-                    .getDeclaredConstructor()
-                    .newInstance() as? T
-            }
-            .map { mapping(it, appInfo) }
-    }
-}

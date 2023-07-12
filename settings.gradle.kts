@@ -20,3 +20,4 @@ rootProject.name = "Testing"
 include(":app")
 include(":dynamiccodeloading")
 include(":dynamictest")
+include(":ExtensionLoader")
