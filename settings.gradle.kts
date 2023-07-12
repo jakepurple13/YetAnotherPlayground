@@ -14,6 +14,9 @@ dependencyResolutionManagement {
     }
 }
 
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
 rootProject.name = "Testing"
 include(":app")
- 
+include(":dynamiccodeloading")
+include(":dynamictest")

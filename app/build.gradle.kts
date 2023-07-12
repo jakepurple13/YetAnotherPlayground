@@ -128,6 +128,7 @@ dependencies {
     // For building media playback UIs
     implementation(libs.androidx.media3.ui)
 
+    implementation(projects.dynamiccodeloading)
 }
 
 protobuf {

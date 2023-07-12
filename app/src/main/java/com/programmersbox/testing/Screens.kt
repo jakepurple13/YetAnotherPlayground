@@ -3,7 +3,9 @@ package com.programmersbox.testing
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import com.programmersbox.testing.chess.ChessScreenPreview
+import com.programmersbox.testing.components.BottomSheetScreen
 import com.programmersbox.testing.components.CustomNavigationScreen
+import com.programmersbox.testing.components.DynamicCodeLoadingDemo
 import com.programmersbox.testing.components.GaugeScreen
 import com.programmersbox.testing.components.GradientImageScreen
 import com.programmersbox.testing.components.NeonScreen
@@ -54,7 +56,9 @@ enum class Screens(
     GaugeView(screen = { GaugeScreen() }),
     Neon(screen = { NeonScreen() }),
     CustomBackStack(screen = { CustomNavigationScreen() }),
-    GradientImage(screen = { GradientImageScreen() })
+    GradientImage(screen = { GradientImageScreen() }),
+    BottomSheetDemo(screen = { BottomSheetScreen() }),
+    DynamicCodeLoadingScreen(screen = { DynamicCodeLoadingDemo() })
     ;
 
     open val route: String = name
