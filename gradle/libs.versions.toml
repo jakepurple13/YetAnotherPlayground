@@ -1,27 +1,27 @@
 [versions]
-agp = "8.2.0-alpha12"
+agp = "8.2.0-alpha15"
 datastore = "1.0.0"
 legacySupportV4 = "1.0.0"
-media3 = "1.1.0-rc01"
-org-jetbrains-kotlin-android = "1.8.21"
+media3 = "1.1.0"
+org-jetbrains-kotlin-android = "1.9.0"
 core-ktx = "1.10.1"
 junit = "4.13.2"
 androidx-test-ext-junit = "1.1.5"
 espresso-core = "3.5.1"
 lifecycle-runtime-ktx = "2.6.1"
 activity-compose = "1.7.2"
-navigation-compose-version = "2.7.0-beta01"
+navigation-compose-version = "2.7.0-beta02"
 coil-compose-version = "2.4.0"
 androidx-lifecycle-compose = "2.6.1"
 androidx-lifecycle-runtime-compose = "2.6.1"
 androidx-palette = "1.0.0"
-ktorVersion = "2.3.1"
-compose-bom = "2023.07.00-alpha01"
-landscapist = "2.1.13"
+ktorVersion = "2.3.2"
+compose-bom = "2023.07.00-alpha02"
+landscapist = "2.2.2"
 radarny = "1.0.1"
 roomVersion = "2.5.2"
 pagingVersion = "3.1.1"
-protobufVersion = "3.23.0"
+protobufVersion = "3.23.4"
 appcompat = "1.6.1"
 material = "1.9.0"
 
@@ -94,7 +94,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 com-android-application = { id = "com.android.application", version.ref = "agp" }
 org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "org-jetbrains-kotlin-android" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "org-jetbrains-kotlin-android" }
-ksp = { id = "com.google.devtools.ksp", version = "1.8.21-1.0.11" }
+ksp = { id = "com.google.devtools.ksp", version = "1.9.0-1.0.11" }
 protobuf = { id = "com.google.protobuf", version = "0.9.3" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
 

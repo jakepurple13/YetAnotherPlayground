@@ -9,6 +9,7 @@ import com.programmersbox.testing.components.DynamicCodeLoadingDemo
 import com.programmersbox.testing.components.GaugeScreen
 import com.programmersbox.testing.components.GradientImageScreen
 import com.programmersbox.testing.components.NeonScreen
+import com.programmersbox.testing.components.Segmented
 import com.programmersbox.testing.components.dynamicthemeloading.DynamicThemeLoadingPreview
 import com.programmersbox.testing.components.limitedbottomsheetscaffold.LimitedBottomSheetScaffoldPreview
 import com.programmersbox.testing.components.lookahead.LookaheadCustomTest
@@ -58,14 +59,15 @@ enum class Screens(
     CustomBackStack(screen = { CustomNavigationScreen() }),
     GradientImage(screen = { GradientImageScreen() }),
     BottomSheetDemo(screen = { BottomSheetScreen() }),
-    DynamicCodeLoadingScreen(screen = { DynamicCodeLoadingDemo() })
+    DynamicCodeLoadingScreen(screen = { DynamicCodeLoadingDemo() }),
+    SegmentedScreen(screen = { Segmented() })
     ;
 
     open val route: String = name
 
     companion object {
         private val noGoScreens = listOf(MainScreen, PokedexDetail)
-        val destinations = values().filter { it !in noGoScreens }
+        val destinations = entries.filter { it !in noGoScreens }
     }
 }
 
