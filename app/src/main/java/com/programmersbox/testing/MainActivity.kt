@@ -59,7 +59,7 @@ class MainActivity : ComponentActivity() {
                                 navController = navController,
                                 startDestination = Screens.MainScreen.route,
                             ) {
-                                Screens.values().forEach { screen ->
+                                Screens.entries.forEach { screen ->
                                     composable(screen.route) { screen.screen(this@SceneHost) }
                                 }
                             }
