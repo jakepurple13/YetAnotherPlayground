@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import com.programmersbox.testing.chess.ChessScreenPreview
 import com.programmersbox.testing.components.BottomSheetScreen
+import com.programmersbox.testing.components.CustomBottomSheetScreen
 import com.programmersbox.testing.components.CustomNavigationScreen
 import com.programmersbox.testing.components.DynamicCodeLoadingDemo
 import com.programmersbox.testing.components.GaugeScreen
@@ -62,7 +63,8 @@ enum class Screens(
     BottomSheetDemo(screen = { BottomSheetScreen() }),
     DynamicCodeLoadingScreen(screen = { DynamicCodeLoadingDemo() }),
     SegmentedScreen(screen = { Segmented() }),
-    MutableStateScreen(screen = { MutableStateTestScreen() })
+    MutableStateScreen(screen = { MutableStateTestScreen() }),
+    CustomBottomSheetTestScreen(screen = { CustomBottomSheetScreen() })
     ;
 
     open val route: String = name
