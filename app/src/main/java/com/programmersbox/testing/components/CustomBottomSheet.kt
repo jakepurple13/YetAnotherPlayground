@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -94,11 +93,13 @@ fun CustomBottomSheetScreen() {
 
     CustomBottomSheetScaffold(
         sheetContent = {
-            repeat(100) {
-                ListItem(
-                    headlineContent = { Text(it.toString()) },
-                    leadingContent = { RadioButton(selected = it == selectedState, onClick = { selectedState = it }) }
-                )
+            LazyColumn {
+                items(100) {
+                    ListItem(
+                        headlineContent = { Text(it.toString()) },
+                        leadingContent = { RadioButton(selected = it == selectedState, onClick = { selectedState = it }) }
+                    )
+                }
             }
         },
         topBar = {
@@ -179,9 +180,7 @@ fun CustomBottomSheetScaffold(
         body = content,
         snackbarHost = { snackbarHost(scaffoldState.snackbarHostState) },
         sheetPeekHeight = sheetPeekHeight,
-        sheetOffset = {
-            runCatching { scaffoldState.bottomSheetState.requireOffset() }.getOrDefault(0f)
-        },
+        sheetOffset = { scaffoldState.bottomSheetState.requireOffset() },
         sheetState = scaffoldState.bottomSheetState,
         containerColor = containerColor,
         contentColor = contentColor,
@@ -222,6 +221,7 @@ private fun BottomSheetScaffoldLayout(
         val layoutHeight = constraints.maxHeight
         val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
 
+        //Moved this above the sheet so we can get the top bar height
         val topBarPlaceable = topBar?.let {
             subcompose(BottomSheetScaffoldLayoutSlot.TopBar) { topBar() }[0]
                 .measure(looseConstraints)
@@ -230,7 +230,7 @@ private fun BottomSheetScaffoldLayout(
 
         val sheetPlaceable = subcompose(BottomSheetScaffoldLayoutSlot.Sheet) {
             bottomSheet(layoutHeight)
-        }[0].measure(looseConstraints.copy(maxHeight = layoutHeight - topBarHeight))
+        }[0].measure(looseConstraints.copy(maxHeight = layoutHeight - topBarHeight)) //Then limiting the height!
         val sheetOffsetY = sheetOffset().roundToInt()
         val sheetOffsetX = Integer.max(0, (layoutWidth - sheetPlaceable.width) / 2)
 
@@ -254,7 +254,9 @@ private fun BottomSheetScaffoldLayout(
         layout(layoutWidth, layoutHeight) {
             // Placement order is important for elevation
             bodyPlaceable.placeRelative(0, topBarHeight)
-            topBarPlaceable?.placeRelative(0, 0)
+            //topBarPlaceable?.placeRelative(0, 0)
+            //Finally, placing this on an above layer so it goes above the sheet!
+            topBarPlaceable?.placeRelativeWithLayer(0, 0, 1f)
             sheetPlaceable.placeRelative(sheetOffsetX, sheetOffsetY)
             snackbarPlaceable.placeRelative(snackbarOffsetX, snackbarOffsetY)
         }
@@ -1288,11 +1290,12 @@ class SheetState @Deprecated(
         fun Saver(
             skipPartiallyExpanded: Boolean,
             confirmValueChange: (SheetValue) -> Boolean,
-            density: Density
+            density: Density,
+            skipHiddenState: Boolean
         ) = Saver<SheetState, SheetValue>(
             save = { it.currentValue },
             restore = { savedValue ->
-                SheetState(skipPartiallyExpanded, density, savedValue, confirmValueChange)
+                SheetState(skipPartiallyExpanded, density, savedValue, confirmValueChange, skipHiddenState)
             }
         )
 
@@ -1478,7 +1481,8 @@ internal fun rememberSheetState(
         saver = SheetState.Saver(
             skipPartiallyExpanded = skipPartiallyExpanded,
             confirmValueChange = confirmValueChange,
-            density = density
+            density = density,
+            skipHiddenState = skipHiddenState
         )
     ) {
         SheetState(
