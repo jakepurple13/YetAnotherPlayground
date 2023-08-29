@@ -16,7 +16,6 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.movableContentWithReceiverOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.core.view.WindowCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -30,7 +29,7 @@ import com.programmersbox.testing.ui.theme.TestingTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        //WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
             TestingTheme {
                 AskForNotificationPermissions()
@@ -74,8 +73,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun AskForNotificationPermissions() {
         if (Build.VERSION.SDK_INT >= 33) {
-            val permissions =
-                rememberPermissionState(permission = Manifest.permission.POST_NOTIFICATIONS)
+            val permissions = rememberPermissionState(permission = Manifest.permission.POST_NOTIFICATIONS)
             LaunchedEffect(Unit) { permissions.launchPermissionRequest() }
         }
     }

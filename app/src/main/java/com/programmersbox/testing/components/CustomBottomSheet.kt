@@ -3,9 +3,13 @@ package com.programmersbox.testing.components
 import androidx.annotation.FloatRange
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.ExperimentalTransitionApi
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -29,7 +33,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -39,7 +48,9 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.contentColorFor
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
@@ -53,14 +64,18 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.layout.intermediateLayout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.collapse
@@ -84,14 +99,43 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
+enum class TopAppBarState {
+    None, Search, ExpandedBottomSheet, NormalTopBar
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalTransitionApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun CustomBottomSheetScreen() {
+    LookaheadScope {
+        Modifier.intermediateLayout { measurable, constraints ->
+            val f = measurable.measure(constraints)
+
+            layout(constraints.maxWidth, constraints.maxHeight) {
+                f.placeRelative(0, 0)
+            }
+        }
+    }
+
     var selectedState by remember { mutableIntStateOf(1) }
     var query by remember { mutableStateOf("") }
     var isActive by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val state = rememberBottomSheetScaffoldState()
+
+    val transition = updateTransition(targetState = state.bottomSheetState.targetValue, label = "")
+
+    val topBarTargetState = when {
+        state.bottomSheetState.targetValue == SheetValue.Expanded -> TopAppBarState.ExpandedBottomSheet
+        selectedState % 5 == 0 -> TopAppBarState.None
+        selectedState % 3 == 0 -> TopAppBarState.NormalTopBar
+        else -> TopAppBarState.Search
+    }
+
+    val sheetShape by transition.animateDp(label = "") { if (it == SheetValue.Expanded) 0.dp else 28.dp }
+    val handleAlpha by transition.animateFloat(label = "") { if (it == SheetValue.Expanded) 0f else 1f }
 
     CustomBottomSheetScaffold(
+        scaffoldState = state,
         sheetContent = {
             LazyColumn {
                 items(100) {
@@ -102,41 +146,71 @@ fun CustomBottomSheetScreen() {
                 }
             }
         },
+        sheetDragHandle = {
+            BottomSheetDefaults.DragHandle(modifier = Modifier.graphicsLayer { alpha = handleAlpha })
+        },
+        sheetShape = MaterialTheme.shapes.extraLarge.copy(
+            topStart = CornerSize(sheetShape),
+            topEnd = CornerSize(sheetShape)
+        ),
         topBar = {
-            AnimatedContent(
-                targetState = selectedState,
-                label = "topBarAnimation",
-                transitionSpec = {
-                    slideInVertically(
-                        animationSpec = tween(durationMillis = 500),
-                        initialOffsetY = { -it }
-                    ) togetherWith slideOutVertically(
-                        animationSpec = tween(durationMillis = 500),
-                        targetOffsetY = { -it }
-                    )
-                },
-                contentAlignment = Alignment.TopCenter
-            ) { target ->
-                when (target) {
-                    0 -> {}
+            Box(
+                contentAlignment = Alignment.TopCenter,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                AnimatedContent(
+                    targetState = topBarTargetState,
+                    label = "",
+                    transitionSpec = {
+                        slideInVertically(
+                            animationSpec = tween(durationMillis = 500),
+                            initialOffsetY = { -it }
+                        ) togetherWith slideOutVertically(
+                            animationSpec = tween(durationMillis = 500),
+                            targetOffsetY = { -it }
+                        )
+                    },
+                    contentAlignment = Alignment.TopCenter
+                ) { target ->
+                    when (target) {
+                        TopAppBarState.None -> {}
 
-                    3 -> SearchBar(
-                        query = query,
-                        onQueryChange = { query = it },
-                        onSearch = {},
-                        active = isActive,
-                        onActiveChange = { isActive = it },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        repeat(100) {
-                            ListItem(
-                                headlineContent = { Text(it.toString()) },
-                                leadingContent = { RadioButton(selected = it == selectedState, onClick = { selectedState = it }) }
-                            )
+                        TopAppBarState.Search -> SearchBar(
+                            query = query,
+                            onQueryChange = { query = it },
+                            onSearch = {},
+                            active = isActive,
+                            onActiveChange = { isActive = it },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            LazyColumn {
+                                items(100) {
+                                    ListItem(
+                                        headlineContent = { Text(it.toString()) },
+                                    )
+                                }
+                            }
                         }
-                    }
 
-                    else -> TopAppBar(title = { Text("Hello World with $target") })
+                        TopAppBarState.ExpandedBottomSheet -> TopAppBar(
+                            title = {},
+                            navigationIcon = {
+                                IconButton(
+                                    onClick = { scope.launch { state.bottomSheetState.partialExpand() } }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.KeyboardArrowDown,
+                                        contentDescription = null
+                                    )
+                                }
+                            },
+                            colors = TopAppBarDefaults.topAppBarColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(BottomSheetDefaults.Elevation)
+                            )
+                        )
+
+                        TopAppBarState.NormalTopBar -> TopAppBar(title = { Text("Hello World with $target") })
+                    }
                 }
             }
         }
@@ -391,7 +465,7 @@ internal fun <T> Modifier.swipeableV2(
     enabled: Boolean = true,
     reverseDirection: Boolean = false,
     interactionSource: MutableInteractionSource? = null
-) = draggable(
+) = this.draggable(
     state = state.swipeDraggableState,
     orientation = orientation,
     enabled = enabled,
@@ -1394,7 +1468,7 @@ object BottomSheetDefaults {
     ) {
         Surface(
             modifier = modifier
-                .padding(vertical = DragHandleVerticalPadding)
+                .padding(top = DragHandleVerticalPadding)
                 .semantics { contentDescription = "dragHandleDescription" },
             color = color,
             shape = shape

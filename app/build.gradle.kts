@@ -99,7 +99,6 @@ dependencies {
     implementation(libs.bundles.pagingLibs)
     implementation(libs.pagingCompose)
     implementation(libs.radarny)
-    implementation(libs.systemUiController)
     implementation(libs.permissions)
     implementation(libs.androidx.datastore)
     implementation(libs.bundles.protobuf)
@@ -130,6 +129,8 @@ dependencies {
 
     implementation(projects.dynamiccodeloading)
     implementation(projects.extensionLoader)
+
+    implementation(libs.androidx.activity.ktx)
 }
 
 protobuf {

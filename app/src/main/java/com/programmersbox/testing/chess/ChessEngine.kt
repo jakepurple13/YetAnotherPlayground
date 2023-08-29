@@ -608,7 +608,7 @@ private fun getHorizontalAndVerticalMoves(board: Board, square: Square) = listOf
     getMovesInDirection(board, square, 0, -1),
 ).flatten()
 
-object NoPiece : Piece("", color = Color.None) {
+data object NoPiece : Piece("", color = Color.None) {
     override suspend fun getMoves(
         board: Board,
         square: Square,

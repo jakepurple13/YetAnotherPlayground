@@ -184,11 +184,10 @@ fun GradientImage(
         contentScale = ContentScale.FillBounds,
         contentDescription = contentDescription,
         colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(saturation) }),
-        modifier = Modifier
+        modifier = modifier
             .scale(scaleX, scaleY)
             .blur(blur, BlurredEdgeTreatment.Unbounded)
             .alpha(alpha)
-            .then(modifier)
     )
 
     AsyncImage(

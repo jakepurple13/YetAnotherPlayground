@@ -154,9 +154,9 @@ class CustomNavigationViewModel : ViewModel() {
 }
 
 sealed class CustomViewState {
-    object Default : CustomViewState()
+    data object Default : CustomViewState()
     data class Start(val i: Int) : CustomViewState()
-    object End : CustomViewState()
+    data object End : CustomViewState()
 }
 
 /**
