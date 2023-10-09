@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.org.jetbrains.kotlin.android) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.androidLibrary) apply false
+    libs.versions.androidx.palette.get()
 }
 
 allprojects {

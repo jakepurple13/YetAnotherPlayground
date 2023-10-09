@@ -3,6 +3,7 @@ package com.programmersbox.testing
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import com.programmersbox.testing.chess.ChessScreenPreview
+import com.programmersbox.testing.components.BackHandlerScreen
 import com.programmersbox.testing.components.BottomSheetScreen
 import com.programmersbox.testing.components.CustomBottomSheetScreen
 import com.programmersbox.testing.components.CustomNavigationScreen
@@ -66,7 +67,8 @@ enum class Screens(
     SegmentedScreen(screen = { Segmented() }),
     MutableStateScreen(screen = { MutableStateTestScreen() }),
     CustomBottomSheetTestScreen(screen = { CustomBottomSheetScreen() }),
-    EdgeToEdgeScreen(screen = { EdgeToEdgeDemo() })
+    EdgeToEdgeScreen(screen = { EdgeToEdgeDemo() }),
+    BackHandlerTest(screen = { BackHandlerScreen() })
     ;
 
     open val route: String = name
