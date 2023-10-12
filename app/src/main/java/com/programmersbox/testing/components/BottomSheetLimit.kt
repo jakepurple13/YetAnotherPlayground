@@ -9,10 +9,14 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
@@ -30,7 +34,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,6 +58,8 @@ internal fun LimitedBottomSheetScaffold(
     animations: LimitedBottomSheetScaffoldAnimations = LimitedBottomSheetScaffoldDefaults.animations(),
     content: @Composable (PaddingValues) -> Unit,
 ) {
+    var layoutHeight by remember { mutableStateOf(0.dp) }
+
     val transitionData = updateTransitionData(
         colors = colors,
         animations = animations,
@@ -76,7 +84,12 @@ internal fun LimitedBottomSheetScaffold(
         snackbarHost = { snackbarHost(scaffoldState.snackbarHostState) },
         modifier = modifier
     ) { padding ->
-        content(padding)
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            content(padding)
+            layoutHeight = maxHeight
+        }
 
         BottomSheetScaffold(
             scaffoldState = rememberBottomSheetScaffoldState(scaffoldState.bottomSheetState),
@@ -97,7 +110,16 @@ internal fun LimitedBottomSheetScaffold(
             sheetShadowElevation = bottomSheet.sheetShadowElevation,
             sheetTonalElevation = bottomSheet.sheetTonalElevation,
             sheetSwipeEnabled = bottomSheet.sheetSwipeEnabled,
-            sheetContent = { sheetContent(padding) },
+            sheetContent = {
+                Column(
+                    modifier = Modifier.heightIn(
+                        max = (layoutHeight - padding.calculateTopPadding())
+                            .coerceAtLeast(bottomSheet.sheetPeekHeight)
+                    )
+                ) {
+                    sheetContent(padding)
+                }
+            },
             containerColor = Color.Transparent,
             contentColor = Color.Transparent,
         ) {}
