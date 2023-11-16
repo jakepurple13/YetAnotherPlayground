@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.protobuf)
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 android {
@@ -86,11 +87,13 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewModelCompose)
     implementation(libs.bundles.ktor)
     implementation(libs.bundles.landscapist)
+    implementation(libs.profileinstaller)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.ui.test.junit4)
+    "baselineProfile"(project(":baselineprofiletest"))
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
     implementation(libs.bundles.roomLibs)
@@ -131,6 +134,8 @@ dependencies {
     implementation(projects.extensionLoader)
 
     implementation(libs.androidx.activity.ktx)
+
+    implementation("androidx.compose.material3:material3-adaptive:1.0.0-alpha01")
 }
 
 protobuf {

@@ -11,6 +11,7 @@ import com.programmersbox.testing.components.DynamicCodeLoadingDemo
 import com.programmersbox.testing.components.EdgeToEdgeDemo
 import com.programmersbox.testing.components.GaugeScreen
 import com.programmersbox.testing.components.GradientImageScreen
+import com.programmersbox.testing.components.ListDetailPaneScreen
 import com.programmersbox.testing.components.MutableStateTestScreen
 import com.programmersbox.testing.components.NeonScreen
 import com.programmersbox.testing.components.Segmented
@@ -68,7 +69,8 @@ enum class Screens(
     MutableStateScreen(screen = { MutableStateTestScreen() }),
     CustomBottomSheetTestScreen(screen = { CustomBottomSheetScreen() }),
     EdgeToEdgeScreen(screen = { EdgeToEdgeDemo() }),
-    BackHandlerTest(screen = { BackHandlerScreen() })
+    BackHandlerTest(screen = { BackHandlerScreen() }),
+    ListDetailPaneTest(screen = { ListDetailPaneScreen() })
     ;
 
     open val route: String = name

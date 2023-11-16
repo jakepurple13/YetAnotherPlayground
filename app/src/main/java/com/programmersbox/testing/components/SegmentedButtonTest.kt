@@ -109,7 +109,7 @@ fun Segmented() {
                 transitionSpec = {
                     (fadeIn(animationSpec = tween(220, delayMillis = 90)) +
                             scaleIn(initialScale = 0.92f, animationSpec = tween(220, delayMillis = 90)))
-                        .togetherWith(ExitTransition.Hold)
+                        .togetherWith(ExitTransition.KeepUntilTransitionsFinished)
                 }
             ) { target ->
                 Text("$target")

@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.androidLibrary) apply false
     libs.versions.androidx.palette.get()
+    alias(libs.plugins.androidTest) apply false
+    alias(libs.plugins.androidx.baselineprofile) apply false
 }
 
 allprojects {
